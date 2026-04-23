@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, resolveApiUrl } from "./api";
-import "./ManualInvoices.css";
+import "./Manual_Invoices.css";
 
 function fmtDateTime(iso) {
   if (!iso) return "—";
