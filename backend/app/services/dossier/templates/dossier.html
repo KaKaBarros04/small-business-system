@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Dossier</title>
+</head>
+<body>
+
+  <!-- =========================
+       CAPA
+  ========================= -->
+  <section class="page">
+    <div class="top-brand">
+      <img class="logo" src="logo.png" alt="Logo">
+      <div class="brand-sub">CONTROLO DE PRAGAS</div>
+    </div>
+
+    <div class="cover-title">
+      <div class="h1">PROTEÇÃO DE PRAGAS</div>
+      <div class="h2">DOSSIER</div>
+    </div>
+
+    <div class="client-box">
+      <div><span class="label">CLIENTE Nº</span> {{ client_number }}</div>
+      <div><span class="label">NOME</span>: {{ client_name }}</div>
+      <div><span class="label">MORADA</span>: {{ client_address }}</div>
+      <div>{{ client_postal }} {{ client_city }}</div>
+    </div>
+
+    <div class="footer-contacts">
+      <div>{{ company_site }}</div>
+      <div>{{ company_email }}</div>
+    </div>
+  </section>
+
+  <!-- =========================
+       ÍNDICE
+  ========================= -->
+  <section class="page">
+    <div class="header">
+      <img class="logo" src="logo.png" alt="Logo">
+      <div class="header-right">
+        <div>{{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }}</div>
+        <div>{{ company_address_line2 }}</div>
+      </div>
+    </div>
+
+    <h2 class="center-title">ÍNDICE</h2>
+
+    <ol class="index">
+      <li>INTRODUÇÃO</li>
+      <li>PLANEAMENTO</li>
+      <li>CERTIFICADO DE SERVIÇOS</li>
+      <li>CONTRATO</li>
+      <li>CONDIÇÕES GERAIS</li>
+    </ol>
+  </section>
+
+  <!-- =========================
+       INTRODUÇÃO
+  ========================= -->
+  <section class="page">
+    <div class="header">
+      <img class="logo" src="logo.png" alt="Logo">
+      <div class="header-right">
+        <div>{{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }}</div>
+        <div>{{ company_address_line2 }}</div>
+      </div>
+    </div>
+
+    <h2 class="center-title">INTRODUÇÃO</h2>
+
+    <p>
+      No âmbito do controlo de prestação de serviços de Controlo de Pragas entre a empresa e o cliente,
+      é efetuado um plano anual de desinfestação ao estabelecimento mencionado, para diagnóstico,
+      desinfeção e prevenção.
+    </p>
+
+    <p>
+      As pragas afetam os núcleos, perturbam as atividades e podem contribuir para a transmissão
+      de doenças, afetando o bem-estar de todos.
+    </p>
+
+    <p>
+      O controlo de pragas envolve medidas preventivas e corretivas para evitar a penetração e/ou
+      abrigo de animais sinantrópicos, através da racionalização do uso de defensivos químicos e
+      boas práticas de higiene.
+    </p>
+
+    <div class="bullets">
+      <div class="bullet-title">Medidas e práticas que visem:</div>
+      <ul>
+        <li>Negar acesso</li>
+        <li>Não permitir abrigo</li>
+        <li>Não disponibilizar alimento</li>
+        <li>Limpeza</li>
+      </ul>
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <div class="footer-row">
+        <div>Contactos: {{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }} — {{ company_address_line2 }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       PLANEAMENTO
+  ========================= -->
+  <section class="page">
+    <div class="header">
+      <img class="logo" src="logo.png" alt="Logo">
+      <div class="header-right">
+        <div>{{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }}</div>
+        <div>{{ company_address_line2 }}</div>
+      </div>
+    </div>
+
+    <h2 class="center-title">PLANEAMENTO</h2>
+    <div class="sub-title">AGENDA DE TRATAMENTO</div>
+
+    <p class="muted">
+      Tratamento de rotina a realizar para controlo de pragas.
+    </p>
+
+    <div class="kv">
+      <div><span class="label">NÚMERO DE VISITAS PREVISTAS</span>: {{ visits_per_year }}</div>
+      <div><span class="label">PRAGAS</span>: {{ pests | join(", ") }}</div>
+    </div>
+
+    <div class="plan-list">
+      {% for m in plan_months %}
+        <div class="plan-item">{{ loop.index }} — <span class="highlight">{{ m }}</span></div>
+      {% endfor %}
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <div class="footer-row">
+        <div>Contactos: {{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }} — {{ company_address_line2 }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       CERTIFICADO
+  ========================= -->
+  <section class="page page-landscape">
+    <div class="cert-wrap">
+      <div class="cert-band">CERTIFICADO</div>
+
+      <div class="cert-body">
+        <div class="cert-block">
+          <div class="cert-label">Certificamos que:</div>
+
+          <div class="cert-row"><b>Nome da Empresa:</b> {{ client_name }}</div>
+          <div class="cert-row"><b>NIF:</b> {{ client_nif }}</div>
+          <div class="cert-row"><b>Morada:</b> {{ client_address }}, {{ client_postal }} {{ client_city }}</div>
+
+          <div class="cert-label2">Descrição do Serviço:</div>
+          <p>
+            Realizamos o serviço de desinfestação nas dependências do cliente, utilizando métodos e
+            produtos adequados para o controlo de pragas. Execução realizada por profissionais aptos
+            e credenciados pelos órgãos regentes.
+          </p>
+
+          <div class="cert-meta">
+            <div><b>Data:</b> {{ today }}</div>
+            <div><b>Válido por:</b> 1 ano</div>
+          </div>
+        </div>
+
+        <div class="cert-sign">
+          <div class="sign-line"></div>
+          <div class="sign-caption">A Gerência</div>
+          <div class="sign-company">DESINFEX</div>
+        </div>
+      </div>
+
+      <div class="cert-footer">
+        <div>{{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }} — {{ company_address_line2 }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       CONTRATO
+  ========================= -->
+  <section class="page">
+    <div class="header">
+      <img class="logo" src="logo.png" alt="Logo">
+      <div class="header-right">
+        <div>{{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }}</div>
+        <div>{{ company_address_line2 }}</div>
+      </div>
+    </div>
+
+    <div class="contract-head">
+      <div class="contract-left">
+        <div><b>NIF</b>: {{ client_nif }}</div>
+        <div><b>Telefone</b>: {{ client_phone }}</div>
+        <div><b>Email</b>: {{ client_email }}</div>
+        <div><b>Data</b>: {{ today }}</div>
+        <div class="mt"><b>Nº</b> {{ client_number }}</div>
+      </div>
+
+      <div class="contract-right">
+        <div><b>Nome</b>: {{ client_name }}</div>
+        <div class="mt"><b>Morada Fiscal</b>:</div>
+        <div>{{ client_address }}</div>
+        <div>{{ client_postal }} {{ client_city }}</div>
+      </div>
+    </div>
+
+    <h2 class="center-title">CONTRATO</h2>
+    <div class="sub-title center">DUPLICADO</div>
+
+    <p>
+      Pelo presente contrato, confirma aceitar os serviços abaixo descritos.
+    </p>
+
+    <p>
+      Desinfestação geral de todas as dependências que constituem o estabelecimento, para extermínio das seguintes pragas:
+    </p>
+
+    <ul>
+      {% for p in pests %}
+        <li>{{ p }}</li>
+      {% endfor %}
+      <li>Outro</li>
+    </ul>
+
+    <p>
+      Utilizando pesticida, específico de efeito residual, para garantia e longevidade da operação.
+    </p>
+
+    <div class="contract-price">
+      <div><b>[X] Avença Anual</b></div>
+      <div class="price"><b>{{ annual_price_eur }} €</b></div>
+    </div>
+
+    <p class="muted">
+      Este serviço, aceite em regime de Avença Anual, garante {{ visits_per_year }} assistências durante o ano e considera-se renovado no ano seguinte, sem aumento de preço.
+      A este preço deve ser acrescentada a taxa de IVA em vigor.
+    </p>
+
+    <div class="contract-note">
+      <b>Nota:</b> Serviço a ser efetuado na morada descrita abaixo:
+      <div class="mt">{{ client_address }}</div>
+      <div>{{ client_postal }} {{ client_city }}</div>
+    </div>
+
+    <div class="signatures">
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-caption">Assinatura Cliente</div>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-caption">Contratada</div>
+        <div class="sig-mini">DESINFEX</div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <div class="footer-row">
+        <div>Contactos: {{ company_phone }}</div>
+        <div>{{ company_email }}</div>
+        <div>{{ company_address_line1 }} — {{ company_address_line2 }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================
+       CONDIÇÕES GERAIS (texto base no template)
+  ========================= -->
+  <section class="page">
+    <h2 class="center-title">CONDIÇÕES GERAIS</h2>
+
+    <p class="small muted">
+      (Por enquanto isto é template. Depois, se quiseres, copiamos o texto real ou buscamos da BD.)
+    </p>
+
+    <h3 class="h3">Art.º 1 — Objeto</h3>
+    <p>
+      O presente documento define as condições gerais aplicáveis à prestação de serviços de controlo de pragas.
+    </p>
+
+    <h3 class="h3">Art.º 2 — Duração</h3>
+    <p>
+      A duração e periodicidade do serviço é definida pelo plano anual acordado.
+    </p>
+
+    <h3 class="h3">Art.º 3 — Responsabilidades</h3>
+    <p>
+      O cliente compromete-se a garantir condições mínimas de acesso e higiene, e a colaborar com as recomendações técnicas.
+    </p>
+
+    <h3 class="h3">Art.º 4 — Pagamentos</h3>
+    <p>
+      O pagamento será realizado de acordo com o contrato/avença em vigor.
+    </p>
+
+    <h3 class="h3">Art.º 5 — Disposições finais</h3>
+    <p>
+      Qualquer alteração deverá ser comunicada por escrito e acordada entre as partes.
+    </p>
+  </section>
+
+</body>
+</html>

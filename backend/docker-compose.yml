@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: gestorpe_db
+    environment:
+      POSTGRES_USER: gestor
+      POSTGRES_PASSWORD: gestor123
+      POSTGRES_DB: gestor_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - gestorpe_pgdata:/var/lib/postgresql/data
+
+volumes:
+  gestorpe_pgdata:

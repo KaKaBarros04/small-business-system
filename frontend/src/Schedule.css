@@ -1,0 +1,532 @@
+/* Schedule.css */
+
+.schedule {
+  display: grid;
+  gap: 16px;
+}
+
+.scheduleHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scheduleHeader h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.scheduleHeader p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scheduleMsg {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.scheduleMsg.error {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.scheduleToolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.schedule .modePills {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.schedule .pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.schedule .pill:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.schedule .pill:active {
+  transform: scale(0.98);
+}
+
+.schedule .pill.active {
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.schedule .historyPill {
+  border-color: rgba(168, 85, 247, 0.28);
+}
+
+.schedule .historyPill.active {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(168, 85, 247, 0.18);
+}
+
+.scheduleSearch {
+  min-width: 280px;
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.scheduleSearch::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+:root[data-theme="light"] .scheduleSearch::placeholder {
+  color: rgba(15, 23, 42, 0.45);
+}
+
+.scheduleSearch:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 2px;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.schedulePolicy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.schedulePolicy span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.weekNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.025));
+  box-shadow: var(--shadow-soft);
+}
+
+.weekLabel {
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+  letter-spacing: 0.2px;
+}
+
+.weekNavActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekBoard {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.weekDayColumn {
+  min-height: 520px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  box-shadow: var(--shadow-soft);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weekDayColumn.today {
+  border-color: rgba(59, 130, 246, 0.34);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.14) inset,
+    var(--shadow-soft);
+}
+
+.weekDayHeader {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.weekDayHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 950;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.dayCount {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.emptyDay {
+  min-height: 100px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.weekCards {
+  display: grid;
+  gap: 10px;
+}
+
+.eventCard {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.eventCard:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.eventCard.compact {
+  gap: 8px;
+}
+
+.eventCard.scheduled {
+  box-shadow: inset 3px 0 0 rgba(59, 130, 246, 0.8);
+}
+
+.eventCard.done {
+  box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.85);
+}
+
+.eventCard.canceled {
+  box-shadow: inset 3px 0 0 rgba(239, 68, 68, 0.85);
+  opacity: 0.92;
+}
+
+.eventTimeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.eventTime {
+  font-size: 18px;
+  font-weight: 950;
+  color: var(--text);
+  letter-spacing: 0.2px;
+}
+
+.historyDate {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.eventClient {
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.eventService {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.eventMeta {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.eventNotes {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  overflow-wrap: anywhere;
+}
+
+.historyBoard {
+  display: grid;
+  gap: 16px;
+}
+
+.historySection {
+  display: grid;
+  gap: 12px;
+}
+
+.historyHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.historyHeader h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+.historyList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.scheduleBody {
+  display: grid;
+  gap: 12px;
+}
+
+.dayCard {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  box-shadow: var(--shadow-soft);
+}
+
+.dayHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.dayHeader h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+.apptList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.apptRow {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.apptRow:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.apptTopline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.apptMain {
+  font-weight: 850;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.schedule .apptMeta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.apptActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.schedule .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.schedule .badge.scheduled {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.schedule .badge.done {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.schedule .badge.canceled {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+:root[data-theme="light"] .schedulePolicy span,
+:root[data-theme="light"] .weekNav,
+:root[data-theme="light"] .weekDayColumn,
+:root[data-theme="light"] .dayCard,
+:root[data-theme="light"] .historySection {
+  background: rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .weekDayHeader {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .emptyDay,
+:root[data-theme="light"] .eventCard,
+:root[data-theme="light"] .apptRow,
+:root[data-theme="light"] .eventNotes {
+  background: rgba(15, 23, 42, 0.02);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .eventCard:hover,
+:root[data-theme="light"] .apptRow:hover {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 1100px) {
+  .weekBoard {
+    grid-template-columns: repeat(7, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .scheduleToolbar {
+    align-items: stretch;
+  }
+
+  .schedule .modePills {
+    width: 100%;
+  }
+
+  .scheduleSearch {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .weekNav {
+    align-items: stretch;
+  }
+
+  .weekNavActions {
+    width: 100%;
+  }
+
+  .apptTopline {
+    align-items: flex-start;
+  }
+
+  .apptActions {
+    justify-content: flex-start;
+  }
+
+  .historyList {
+    grid-template-columns: 1fr;
+  }
+}

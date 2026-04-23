@@ -1,0 +1,252 @@
+/* Staff.css */
+
+.staffPage,
+.card-cliente.staffPage {
+  display: grid;
+  gap: 14px;
+}
+
+.staffPage .clientsTop,
+.card-cliente .clientsTop {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.staffPage .clientsTitle,
+.card-cliente .clientsTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.staffPage .status,
+.card-cliente .status {
+  opacity: 0.85;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.staffPage .msg,
+.card-cliente .msg {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  margin: 0;
+  background: rgba(255,255,255,0.04);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.staffPage .msg.error,
+.card-cliente .msg.error {
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.10);
+}
+
+.staffPage .msg.ok,
+.card-cliente .msg.ok {
+  border-color: rgba(34,197,94,0.30);
+  background: rgba(34,197,94,0.10);
+}
+
+/* top actions */
+.staffTopActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.staffSearch,
+.card-cliente .input {
+  min-width: 0;
+}
+
+/* form card */
+.staffFormCard {
+  padding: 12px;
+}
+
+.staffFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.staffField {
+  display: grid;
+  gap: 6px;
+}
+
+.staffField .label,
+.card-cliente .label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 900;
+  letter-spacing: 0.15px;
+}
+
+.staffField .input,
+.card-cliente .input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.staffField .input::placeholder,
+.card-cliente .input::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+:root[data-theme="light"] .staffField .input::placeholder,
+:root[data-theme="light"] .card-cliente .input::placeholder {
+  color: rgba(15,23,42,0.45);
+}
+
+.staffField .input:focus,
+.card-cliente .input:focus {
+  outline: 2px solid rgba(59,130,246,0.55);
+  outline-offset: 2px;
+  border-color: rgba(255,255,255,0.16);
+}
+
+.staffSubmitWrap {
+  display: flex;
+  align-items: end;
+}
+
+.staffSubmitWrap .btn,
+.staffTopActions .btn {
+  height: 42px;
+}
+
+.btn.btn-primary {
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05)), var(--primary);
+  color: #fff;
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* list card */
+.staffListCard {
+  padding: 12px;
+}
+
+.staffListTop {
+  margin-bottom: 10px;
+}
+
+.staffTableWrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.staffTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.staffTable thead th {
+  text-align: left;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.staffTable tbody td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.staffTable tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.staffRole {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.staffRole.ADMIN {
+  border-color: rgba(245,158,11,0.28);
+  background: rgba(245,158,11,0.14);
+}
+
+.staffRole.STAFF {
+  border-color: rgba(59,130,246,0.28);
+  background: rgba(59,130,246,0.12);
+}
+
+.staffId {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* light theme refinements */
+:root[data-theme="light"] .staffTableWrap {
+  background: rgba(15,23,42,0.02);
+}
+
+:root[data-theme="light"] .staffTable thead th {
+  background: rgba(15,23,42,0.03);
+}
+
+:root[data-theme="light"] .staffTable tbody tr:hover {
+  background: rgba(15,23,42,0.03);
+}
+
+/* responsive */
+@media (max-width: 980px) {
+  .staffFormGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .staffSubmitWrap {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .staffFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .staffTopActions {
+    width: 100%;
+  }
+
+  .staffTopActions .input,
+  .staffTopActions .btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,410 @@
+/* =========================
+   Monitoring Maps
+   ========================= */
+
+.monitoringMaps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.monitoringMaps .pageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.monitoringMaps .pageHead h2 {
+  margin: 0 0 4px;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.monitoringMaps .muted {
+  margin: 0;
+  opacity: 0.76;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.monitoringMaps .alert {
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.monitoringMaps .alert-error {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  color: #991b1b;
+}
+
+.monitoringMaps .alert-success {
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  color: #166534;
+}
+
+.monitoringMaps .mm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.monitoringMaps .mm-grid-3 {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+  gap: 18px;
+}
+
+.monitoringMaps .mm-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+}
+
+.monitoringMaps .mm-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.04rem;
+  line-height: 1.2;
+}
+
+.monitoringMaps .mm-card-large {
+  min-height: 520px;
+}
+
+.monitoringMaps .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =========================
+   Blindagem contra .field global
+   ========================= */
+
+.monitoringMaps .field {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-width: 0 !important;
+}
+
+.monitoringMaps .field > span {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.92rem;
+  font-weight: 600;
+  opacity: 0.9;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+/* =========================
+   Fields / inputs / selects
+   ========================= */
+
+.monitoringMaps .field input,
+.monitoringMaps .field select,
+.monitoringMaps .field textarea,
+.monitoringMaps .mm-table input,
+.monitoringMaps .mm-table select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  color: var(--field-text);
+  font: inherit;
+  box-sizing: border-box;
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.monitoringMaps .field input:hover,
+.monitoringMaps .field select:hover,
+.monitoringMaps .field textarea:hover,
+.monitoringMaps .mm-table input:hover,
+.monitoringMaps .mm-table select:hover {
+  background: var(--field-bg-hover);
+}
+
+.monitoringMaps .field input::placeholder,
+.monitoringMaps .field textarea::placeholder,
+.monitoringMaps .mm-table input::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.monitoringMaps .field input:focus,
+.monitoringMaps .field select:focus,
+.monitoringMaps .field textarea:focus,
+.monitoringMaps .mm-table input:focus,
+.monitoringMaps .mm-table select:focus {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.monitoringMaps .field select option,
+.monitoringMaps .mm-table select option {
+  background: var(--option-bg);
+  color: var(--option-text);
+}
+
+.monitoringMaps .field textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+/* =========================
+   Client box / buttons / map list
+   ========================= */
+
+.monitoringMaps .clientBox {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.monitoringMaps .rowBtns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.monitoringMaps .mapList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.monitoringMaps .mapListItem {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  color: inherit;
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease, background-color 0.15s ease;
+}
+
+.monitoringMaps .mapListItem:hover {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(255,255,255,0.04);
+}
+
+.monitoringMaps .mapListItem:active {
+  transform: scale(0.995);
+}
+
+.monitoringMaps .mapListItem.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.monitoringMaps .mapListTitle {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.monitoringMaps .mapListMeta {
+  font-size: 0.82rem;
+  opacity: 0.72;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+/* =========================
+   Canvas / image / markers
+   ========================= */
+
+.monitoringMaps .mapCanvas {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  cursor: crosshair;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.monitoringMaps .mapImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.monitoringMaps .map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #111827;
+  cursor: pointer;
+  padding: 0;
+  z-index: 4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.monitoringMaps .map-marker:hover {
+  filter: brightness(0.98);
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+.monitoringMaps .map-marker span {
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* =========================
+   Table
+   ========================= */
+
+.monitoringMaps .tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 14px;
+}
+
+.monitoringMaps .mm-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.monitoringMaps .mm-table th,
+.monitoringMaps .mm-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.92rem;
+}
+
+.monitoringMaps .mm-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 1;
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  opacity: 0.82;
+}
+
+.monitoringMaps .mm-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.monitoringMaps .mm-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 6px;
+  box-shadow: none;
+  accent-color: var(--primary);
+}
+
+/* =========================
+   Dark mode refinements
+   ========================= */
+
+[data-theme="dark"] .monitoringMaps .clientBox {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .monitoringMaps .mapCanvas {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .monitoringMaps .alert-error {
+  color: #fecaca;
+}
+
+[data-theme="dark"] .monitoringMaps .alert-success {
+  color: #bbf7d0;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 1180px) {
+  .monitoringMaps .mm-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .monitoringMaps .mm-card-large {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 840px) {
+  .monitoringMaps .mm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .monitoringMaps .pageHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .monitoringMaps .mapCanvas {
+    min-height: 280px;
+  }
+
+  .monitoringMaps .mm-table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 560px) {
+  .monitoringMaps .mm-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .monitoringMaps .rowBtns {
+    flex-direction: column;
+  }
+
+  .monitoringMaps .rowBtns .btn {
+    width: 100%;
+  }
+
+  .monitoringMaps .mapCanvas {
+    min-height: 220px;
+  }
+}

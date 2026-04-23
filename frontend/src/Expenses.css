@@ -1,0 +1,384 @@
+/* Expenses.css */
+
+.exp {
+  display: grid;
+  gap: 14px;
+}
+
+.expHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expHeader h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: 0.2px;
+}
+
+.expHeader p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.expMsg {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.expMsg.error {
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.10);
+}
+
+.expCard {
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+  box-shadow: var(--shadow-soft);
+}
+
+.expCard h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.expForm {
+  display: grid;
+  gap: 10px;
+  max-width: 920px;
+}
+
+.expFields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 720px) {
+  .expFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.expSpanAll {
+  grid-column: 1 / -1;
+}
+
+.expForm label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--text);
+}
+
+.expForm input,
+.expForm select,
+.expForm textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  color: var(--field-text);
+  font-weight: 800;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.expForm input:hover,
+.expForm select:hover,
+.expForm textarea:hover {
+  background: var(--field-bg-hover);
+}
+
+.expForm input::placeholder,
+.expForm textarea::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.expForm input:focus,
+.expForm select:focus,
+.expForm textarea:focus {
+  outline: 2px solid var(--field-border-focus);
+  outline-offset: 2px;
+  border-color: var(--field-border-focus);
+}
+
+.expForm select option {
+  background: var(--option-bg);
+  color: var(--option-text);
+}
+
+.expActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ===== Toolbar ===== */
+.expToolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.expSearch {
+  min-width: 260px;
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  color: var(--field-text);
+  font-weight: 800;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.expSearch:hover {
+  background: var(--field-bg-hover);
+}
+
+.expSearch::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.expSearch:focus {
+  outline: 2px solid var(--field-border-focus);
+  outline-offset: 2px;
+  border-color: var(--field-border-focus);
+}
+
+.expTotal {
+  font-weight: 950;
+}
+
+.expTotal small {
+  color: var(--muted);
+  font-weight: 750;
+  margin-left: 6px;
+}
+
+/* ===== Filtros de período ===== */
+.expFilters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.expPills {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.expPill {
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.expPill:hover {
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-1px);
+}
+
+.expPill:active {
+  transform: scale(0.98);
+}
+
+.expPill.active {
+  border-color: rgba(59,130,246,0.45);
+  background: rgba(59,130,246,0.18);
+}
+
+/* ===== Lista em tabela / cards ===== */
+.expTable {
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.08);
+  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+  box-shadow: var(--shadow-soft);
+}
+
+.expHead {
+  display: grid;
+  grid-template-columns: 0.55fr 1.15fr 2fr 0.95fr 0.9fr 1.05fr;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.expBody {
+  display: grid;
+}
+
+.expRow {
+  display: grid;
+  grid-template-columns: 0.55fr 1.15fr 2fr 0.95fr 0.9fr 1.05fr;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  align-items: center;
+}
+
+.expRow:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.expCell {
+  min-width: 0;
+}
+
+.expStrong {
+  font-weight: 950;
+}
+
+.expMuted {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.expRight {
+  text-align: right;
+}
+
+.expRowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.expAmount {
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+/* Editor inline */
+.expEditBox {
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+}
+
+.expEditFields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.expEditFields input,
+.expEditFields select,
+.expEditFields textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  color: var(--field-text);
+  font-weight: 800;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.expEditFields input:hover,
+.expEditFields select:hover,
+.expEditFields textarea:hover {
+  background: var(--field-bg-hover);
+}
+
+.expEditFields input:focus,
+.expEditFields select:focus,
+.expEditFields textarea:focus {
+  outline: 2px solid var(--field-border-focus);
+  outline-offset: 2px;
+  border-color: var(--field-border-focus);
+}
+
+.expEditFields select option {
+  background: var(--option-bg);
+  color: var(--option-text);
+}
+
+@media (max-width: 720px) {
+  .expEditFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* light theme refinements */
+:root[data-theme="light"] .expCard,
+:root[data-theme="light"] .expTable,
+:root[data-theme="light"] .expEditBox,
+:root[data-theme="light"] .expMsg {
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(15,23,42,0.08);
+}
+
+:root[data-theme="light"] .expHead {
+  background: rgba(248,250,252,1);
+  border-bottom-color: rgba(15,23,42,0.08);
+}
+
+:root[data-theme="light"] .expRow {
+  border-bottom-color: rgba(15,23,42,0.06);
+}
+
+:root[data-theme="light"] .expRow:hover {
+  background: rgba(248,250,252,1);
+}
+
+/* Mobile */
+@media (max-width: 920px) {
+  .expHead {
+    display: none;
+  }
+
+  .expRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+
+  .expRight {
+    text-align: left;
+  }
+
+  .expRowActions {
+    justify-content: flex-start;
+  }
+}

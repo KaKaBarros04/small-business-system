@@ -1,0 +1,13 @@
+class VisitReport(Base):
+    __tablename__ = "visit_reports"
+
+    id = Column(Integer, primary_key=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False)
+
+    pest_type = Column(String(100))        # rato, barata, etc
+    product_used = Column(String(100))
+    consumption_percent = Column(Integer)  # 0–100
+    box_condition = Column(String(100))    # OK / DANIFICADA
+    observations = Column(String(500))
+
+    created_at = Column(DateTime, default=datetime.utcnow)

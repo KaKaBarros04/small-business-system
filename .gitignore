@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Env 
+.env
+
+# Node 
+node_modules/
+dist/
+
+# uploads
+uploads/
+
+# venv 
+venv/
+
+backend/agenda-*.json

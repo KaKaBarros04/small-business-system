@@ -1,0 +1,434 @@
+/* Stock.css */
+
+.stockPage {
+  display: grid;
+  gap: 14px;
+}
+
+/* card base */
+.stockPage .card-cliente {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  box-shadow: var(--shadow-soft);
+  padding: 16px;
+  margin-bottom: 24px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.stockPage .card-cliente:hover {
+  transform: translateY(-1px);
+}
+
+.stockPage .clientsTop {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.stockPage .clientsTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+/* status / mensagens */
+.stockPage .status {
+  opacity: 0.85;
+  margin: 10px 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.stockPage .msg {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  margin: 10px 0;
+  background: rgba(255,255,255,0.04);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.stockPage .msg.ok {
+  border-color: rgba(34,197,94,0.30);
+  background: rgba(34,197,94,0.10);
+}
+
+.stockPage .msg.error {
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.10);
+}
+
+/* form wrapper */
+.stockPage .novo-cliente {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* form */
+.stockPage .edit-form {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 720px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  animation: popIn 180ms ease both;
+  box-shadow: var(--shadow-soft);
+}
+
+.stockPage .formHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  align-items: center;
+}
+
+.stockPage .formTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+/* fields grid */
+.stockPage .edit-form .fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 720px) {
+  .stockPage .edit-form .fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stockPage .spanAll {
+  grid-column: 1 / -1;
+}
+
+/* labels */
+.stockPage .edit-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.stockPage .edit-form label > div,
+.stockPage .edit-form label > span {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 900;
+  letter-spacing: 0.15px;
+}
+
+/* inputs */
+.stockPage .edit-form input,
+.stockPage .edit-form textarea,
+.stockPage .edit-form select {
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  width: 100%;
+  font-weight: 800;
+  min-width: 0;
+}
+
+.stockPage .edit-form textarea {
+  resize: vertical;
+}
+
+.stockPage .edit-form input::placeholder,
+.stockPage .edit-form textarea::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+:root[data-theme="light"] .stockPage .edit-form input::placeholder,
+:root[data-theme="light"] .stockPage .edit-form textarea::placeholder {
+  color: rgba(15,23,42,0.45);
+}
+
+.stockPage .edit-form select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.stockPage .edit-form input:focus,
+.stockPage .edit-form textarea:focus,
+.stockPage .edit-form select:focus {
+  outline: 2px solid rgba(59,130,246,0.55);
+  outline-offset: 2px;
+  border-color: rgba(255,255,255,0.16);
+}
+
+/* buttons */
+.stockPage .btn-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stockPage .btn.formS {
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05)), var(--success);
+  color: #fff;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.stockPage .btn.formC {
+  background: rgba(239,68,68,0.14);
+  border-color: rgba(239,68,68,0.25);
+  color: #fff;
+}
+
+.stockPage .btn.ghost {
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+}
+
+.stockPage .btn.danger {
+  background: rgba(239,68,68,0.14);
+  border-color: rgba(239,68,68,0.25);
+  color: #fff;
+}
+
+/* list */
+.stockPage .lista {
+  display: grid;
+  gap: 8px;
+}
+
+.stockPage .listTitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+.stockPage .ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.stockPage .li {
+  margin: 0;
+}
+
+/* table header */
+.stockPage .rowHeader {
+  display: grid;
+  grid-template-columns: 0.22fr 1.1fr 0.65fr 0.7fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 800;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* row/card */
+.stockPage .clientCard {
+  display: grid;
+  gap: 10px;
+}
+
+.stockPage .row {
+  display: grid;
+  grid-template-columns: 0.22fr 1.1fr 0.65fr 0.7fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  transition: transform 120ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.stockPage .row:hover {
+  box-shadow: 0 8px 18px rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
+
+.stockPage .cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stockPage .nameCell b {
+  font-size: 14px;
+  font-weight: 950;
+  color: var(--text);
+}
+
+.stockPage .subLine {
+  opacity: 0.8;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.stockPage .actionsHeader {
+  text-align: right;
+}
+
+.stockPage .actionsCell {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.stockPage .idcl {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* badges */
+.stockPage .badgesRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 6px;
+}
+
+.stockPage .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .stockPage .rowHeader {
+    display: none;
+  }
+
+  .stockPage .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name actions"
+      "stock actions"
+      "cost actions";
+  }
+
+  .stockPage .idcl {
+    display: none;
+  }
+
+  .stockPage .nameCell {
+    grid-area: name;
+  }
+
+  .stockPage .actionsCell {
+    grid-area: actions;
+    align-self: start;
+    justify-content: flex-end;
+  }
+
+  .stockPage .row .cell:nth-child(3) {
+    grid-area: stock;
+  }
+
+  .stockPage .row .cell:nth-child(4) {
+    grid-area: cost;
+  }
+
+  .stockPage .cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* modal */
+.stockModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.stockModalCard {
+  width: min(720px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.stockModalTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.stockModalTop h3 {
+  margin: 0;
+  color: var(--text);
+}
+
+/* light refinements */
+:root[data-theme="light"] .stockPage .row,
+:root[data-theme="light"] .stockPage .edit-form,
+:root[data-theme="light"] .stockPage .card-cliente {
+  background: rgba(15,23,42,0.02);
+}
+
+:root[data-theme="light"] .stockPage .row:hover {
+  background: rgba(15,23,42,0.04);
+  box-shadow: 0 8px 18px rgba(15,23,42,0.08);
+}
+
+/* animations */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stockPage .edit-form,
+  .stockPage .row,
+  .stockPage .card-cliente {
+    animation: none;
+    transition: none;
+  }
+}
