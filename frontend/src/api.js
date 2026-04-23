@@ -1,4 +1,4 @@
-export const API_BASE_URL = "http://small-business-system.onrender.com";
+export const API_BASE_URL = "https://small-business-system.onrender.com";
 
 // =========================
 // Auth tokens
