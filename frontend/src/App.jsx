@@ -18,7 +18,7 @@ import Clients from "./Clients";
 import Appointments from "./Appointments";
 import Schedule from "./Schedule";
 import Dashboard from "./Dashboard";
-import VendorInvoices from "./manual_invoices";
+import VendorInvoices from "./Manual_Invoices";
 import Expenses from "./Expenses";
 import AuditLogs from "./Auditlogs";
 import GroupDashboard from "./GroupDashboard";
