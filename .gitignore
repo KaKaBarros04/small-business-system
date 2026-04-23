@@ -4,6 +4,7 @@ __pycache__/
 
 # Env 
 .env
+backend/.env
 
 # Node 
 node_modules/
@@ -11,8 +12,10 @@ dist/
 
 # uploads
 uploads/
+backend/uploads/
 
 # venv 
 venv/
+backend/venv/
 
 backend/agenda-*.json
