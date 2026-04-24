@@ -1,5 +1,5 @@
 .auth-page {
-  min-height: calc(100vh - 48px);
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px 16px;
@@ -243,27 +243,51 @@
 
 @media (max-width: 520px) {
   .auth-page {
-    padding: 14px;
+    min-height: 100dvh;
+    padding: 12px;
+    place-items: center;
   }
 
   .auth-card {
     padding: 18px;
     border-radius: 18px;
+    max-width: 100%;
+  }
+
+  .auth-header {
+    margin-bottom: 14px;
   }
 
   .auth-icon {
-    width: 60px;
-    height: 60px;
-    font-size: 26px;
-    border-radius: 18px;
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+    border-radius: 17px;
+    margin-bottom: 12px;
   }
 
   .auth-title {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
+  }
+
+  .auth-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .auth-form {
+    gap: 12px;
+  }
+
+  .auth-form .input,
+  .auth-form .primary,
+  .password-wrap .ghost {
+    min-height: 46px;
+    font-size: 16px;
   }
 
   .password-wrap {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .password-wrap .ghost {

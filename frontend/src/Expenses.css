@@ -362,7 +362,9 @@
   background: rgba(248,250,252,1);
 }
 
-/* Mobile */
+/* =========================
+   MOBILE UPGRADE (melhor UX)
+   ========================= */
 @media (max-width: 920px) {
   .expHead {
     display: none;
@@ -370,15 +372,53 @@
 
   .expRow {
     grid-template-columns: 1fr;
-    gap: 8px;
-    align-items: start;
+    gap: 10px;
+    align-items: stretch;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .expCell {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  /* label automático tipo “Data:”, “Valor:” */
+  .expCell::before {
+    content: attr(data-label);
+    font-weight: 900;
+    color: var(--muted);
+  }
+
+  .expStrong {
+    font-size: 14px;
+  }
+
+  .expMuted {
+    font-size: 12px;
+  }
+
+  .expAmount {
+    font-size: 15px;
   }
 
   .expRight {
-    text-align: left;
+    text-align: right;
   }
 
   .expRowActions {
-    justify-content: flex-start;
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .expRowActions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }

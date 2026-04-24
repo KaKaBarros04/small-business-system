@@ -11,6 +11,16 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  color-scheme: dark; /* default */
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 *,
@@ -36,11 +46,9 @@ textarea {
   font: inherit;
 }
 
-/* muito importante:
-   deixa o browser parar de tentar estilizar controls
-   com light/dark automático por conta própria */
-:root,
-:root[data-theme="light"],
-:root[data-theme="dark"] {
-  color-scheme: light;
+/* evita zoom estranho no mobile ao focar inputs */
+input,
+select,
+textarea {
+  font-size: 16px;
 }

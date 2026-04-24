@@ -10,10 +10,6 @@ backend/.env
 node_modules/
 dist/
 
-# uploads
-uploads/
-backend/uploads/
-
 # venv 
 venv/
 backend/venv/

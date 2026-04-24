@@ -220,3 +220,69 @@
   background: rgba(255,255,255,0.05);
   opacity: 1;
 }
+
+@media (max-width: 620px) {
+  .permCard {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .permTop {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .permTop .btnPrimary {
+    width: 100%;
+  }
+
+  .permTitle {
+    font-size: 16px;
+  }
+
+  .permScopeBox {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .permTargetInfo {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .permGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .permModule {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .permModuleHeader {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .permModuleBulk {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btnGhost,
+  .btnPrimary {
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .permRow {
+    padding: 10px;
+  }
+
+  .permRow input {
+    width: 20px;
+    height: 20px;
+  }
+}

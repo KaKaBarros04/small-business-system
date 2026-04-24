@@ -376,7 +376,25 @@
 
 /* responsive */
 @media (max-width: 820px) {
-  .apptsFields {
+  .appts {
+    gap: 12px;
+  }
+
+  .apptsHeader {
+    align-items: flex-start;
+  }
+
+  .apptsCard {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .apptsForm {
+    max-width: 100%;
+  }
+
+  .apptsFields,
+  .apptEditGrid {
     grid-template-columns: 1fr;
   }
 
@@ -384,26 +402,60 @@
     grid-column: auto;
   }
 
-  .apptEditGrid {
-    grid-template-columns: 1fr;
-  }
-
   .apptsToolbar {
     align-items: stretch;
+    width: 100%;
   }
 
   .apptsSearch {
     min-width: 0;
     width: 100%;
+    border-radius: 14px;
   }
 
   .apptTop {
     align-items: flex-start;
   }
 
+  .apptTitle {
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+
   .apptButtons,
   .apptEditActions,
   .apptsActions {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .apptButtons .btn,
+  .apptEditActions .btn,
+  .apptsActions .btn,
+  .apptButtons a.btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .apptsHeader h2 {
+    font-size: 16px;
+  }
+
+  .apptItem {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .apptBadges {
+    gap: 6px;
+  }
+
+  .apptBadge {
+    width: 100%;
+    justify-content: center;
   }
 }

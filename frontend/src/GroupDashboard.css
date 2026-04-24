@@ -301,3 +301,61 @@
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(15, 23, 42, 0.08);
 }
+
+@media (max-width: 700px) {
+  .groupDashTop {
+    align-items: flex-start;
+  }
+
+  .groupDashTitleRow,
+  .groupDashControls,
+  .gdPills {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .gdField {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .gdField select,
+  .gdField input[type="month"],
+  .gdField input[type="number"] {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+  }
+
+  .groupTotals,
+  .groupCharts,
+  .companyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gdChartBox,
+  .gdCompareChart {
+    height: 240px;
+  }
+
+  .gdCompareCard,
+  .gdCard {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .companyHead {
+    align-items: flex-start;
+  }
+
+  .companyBody {
+    grid-template-columns: 1fr;
+  }
+
+  .companyDonut {
+    height: 180px;
+  }
+}

@@ -237,16 +237,38 @@
 }
 
 @media (max-width: 640px) {
-  .staffFormGrid {
+  .staffFormCard,
+  .staffListCard {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .staffPage .clientsTop,
+  .card-cliente .clientsTop {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
-  .staffTopActions {
+  .staffSubmitWrap .btn {
     width: 100%;
   }
 
-  .staffTopActions .input,
-  .staffTopActions .btn {
-    width: 100%;
+  .staffTableWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .staffTable {
+    min-width: 560px;
+  }
+
+  .staffTable thead th,
+  .staffTable tbody td {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .staffRole {
+    justify-content: center;
   }
 }

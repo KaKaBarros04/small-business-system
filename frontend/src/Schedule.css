@@ -497,36 +497,101 @@
 }
 
 @media (max-width: 720px) {
+  .schedule {
+    gap: 12px;
+  }
+
+  .scheduleHeader h2 {
+    font-size: 17px;
+  }
+
   .scheduleToolbar {
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .schedule .modePills {
-    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .schedule .pill {
+    text-align: center;
+    padding: 10px;
   }
 
   .scheduleSearch {
-    min-width: 0;
     width: 100%;
+    border-radius: 14px;
   }
 
-  .weekNav {
-    align-items: stretch;
+  /* 🔥 melhora scroll da semana */
+  .weekBoard {
+    scroll-snap-type: x mandatory;
+    gap: 10px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .weekNavActions {
-    width: 100%;
+  .weekDayColumn {
+    scroll-snap-align: start;
+    min-height: 420px;
+    padding: 10px;
+    border-radius: 16px;
   }
 
-  .apptTopline {
-    align-items: flex-start;
+  .eventCard {
+    padding: 10px;
+    border-radius: 14px;
   }
 
+  .eventTime {
+    font-size: 16px;
+  }
+
+  .eventClient {
+    font-size: 13px;
+  }
+
+  .eventService {
+    font-size: 12px;
+  }
+
+  .eventNotes {
+    padding: 8px;
+    font-size: 11.5px;
+  }
+
+  /* 🔥 botões mais usáveis no telemóvel */
   .apptActions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
-  .historyList {
-    grid-template-columns: 1fr;
+  .apptActions .btn,
+  .apptActions a.btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* 🔥 melhor leitura lista diária */
+  .dayCard {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .apptRow {
+    padding: 9px;
+    border-radius: 12px;
+  }
+
+  .apptMain {
+    font-size: 13px;
+  }
+
+  .schedule .badge {
+    font-size: 11px;
+    padding: 4px 8px;
   }
 }

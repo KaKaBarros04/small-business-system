@@ -611,9 +611,43 @@ input[type="checkbox"] {
   background: rgba(255,255,255,0.92);
 }
 
-/* responsive */
 @media (max-width: 820px) {
-  .fields {
+  .card-cliente {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .clientsTop,
+  .listTop {
+    align-items: flex-start;
+  }
+
+  .btn-form,
+  .searchBar,
+  .dashPeriod {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .btn-form .btn,
+  .searchBar .btn,
+  .dashPeriod .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .novo-cliente {
+    justify-content: stretch;
+  }
+
+  .edit-form {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .fields,
+  .modalGrid {
     grid-template-columns: 1fr;
   }
 
@@ -621,16 +655,30 @@ input[type="checkbox"] {
     grid-column: auto;
   }
 
+  .contractHeader,
+  .contractAction {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .toggle {
+    justify-content: center;
+  }
+
   .clientsRowHeader {
     display: none;
   }
 
   .clientsRow {
-    grid-template-columns: 32px 1fr auto;
+    grid-template-columns: 24px 1fr;
     grid-template-areas:
-      "check name actions"
-      "check email actions"
-      "check phone actions";
+      "check name"
+      "check email"
+      "check phone"
+      "actions actions";
+    gap: 8px;
+    padding: 12px;
   }
 
   .clientsRow > div:first-child {
@@ -655,7 +703,20 @@ input[type="checkbox"] {
 
   .actionsCell {
     grid-area: actions;
-    align-self: start;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    justify-content: stretch;
+    margin-top: 8px;
+  }
+
+  .actionsCell .btn,
+  .actionsCell a.btn {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+    text-align: center;
   }
 
   .clientsCell {
@@ -663,16 +724,40 @@ input[type="checkbox"] {
     overflow-wrap: anywhere;
   }
 
-  .modalGrid {
+  .badgesRow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .searchBar input,
+  .searchBar select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .modalBackdrop {
+    align-items: flex-start;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .modalCard {
+    max-width: 100%;
+    padding: 13px;
+  }
+
+  .modalActions {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
-  .searchBar {
+  .modalActions .btn {
     width: 100%;
-  }
-
-  .searchBar input {
-    width: 100%;
-    max-width: none;
   }
 }

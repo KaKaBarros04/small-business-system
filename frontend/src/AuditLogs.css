@@ -294,3 +294,54 @@
 :root[data-theme="light"] .detailsRow td {
   background: rgba(248, 250, 252, 0.95);
 }
+
+@media (max-width: 700px) {
+  .auditTop {
+    display: grid;
+    gap: 10px;
+  }
+
+  .auditActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .auditActions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auditFilters {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .auditTableWrap {
+    border-radius: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auditTable {
+    min-width: 760px;
+  }
+
+  .summary {
+    max-width: 240px;
+  }
+
+  .detailsCell {
+    padding: 10px !important;
+  }
+
+  .detailsGrid {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .jsonPre {
+    max-height: 240px;
+    font-size: 11px;
+  }
+}

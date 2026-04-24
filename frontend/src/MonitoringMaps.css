@@ -391,20 +391,66 @@
 }
 
 @media (max-width: 560px) {
+  .monitoringMaps {
+    gap: 14px;
+  }
+
+  .monitoringMaps .pageHead h2 {
+    font-size: 1.25rem;
+  }
+
   .monitoringMaps .mm-card {
-    padding: 14px;
-    border-radius: 16px;
+    padding: 12px;
+    border-radius: 14px;
   }
 
-  .monitoringMaps .rowBtns {
-    flex-direction: column;
+  .monitoringMaps .stack {
+    gap: 10px;
   }
 
-  .monitoringMaps .rowBtns .btn {
-    width: 100%;
+  .monitoringMaps .clientBox {
+    padding: 10px 12px;
+    font-size: 0.9rem;
   }
 
+  .monitoringMaps .mapListItem {
+    padding: 10px;
+  }
+
+  .monitoringMaps .mapListTitle {
+    font-size: 0.92rem;
+  }
+
+  .monitoringMaps .mapListMeta {
+    font-size: 0.78rem;
+  }
+
+  /* 🔥 melhora uso do mapa no telemóvel */
   .monitoringMaps .mapCanvas {
-    min-height: 220px;
+    touch-action: manipulation;
+    min-height: 240px;
+    border-radius: 14px;
+  }
+
+  /* 🔥 markers maiores para dedo */
+  .monitoringMaps .map-marker {
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 4px 6px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  /* 🔥 inputs mais fáceis de tocar */
+  .monitoringMaps .field input,
+  .monitoringMaps .field select,
+  .monitoringMaps .field textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* 🔥 scroll mais suave na tabela */
+  .monitoringMaps .tableWrap {
+    -webkit-overflow-scrolling: touch;
   }
 }

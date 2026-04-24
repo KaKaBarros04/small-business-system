@@ -393,36 +393,46 @@ export default function Expenses() {
             <div style={{ textAlign: "right" }}>Ações</div>
           </div>
 
+
           <div className="expBody">
             {filtered.map((e) => (
               <div key={e.id} className="expRow">
-                <div className="expCell">
+                
+                <div className="expCell" data-label="ID">
                   <div className="expStrong">#{e.id}</div>
                   <div className="expMuted">{fmtDate(e.date)}</div>
                 </div>
 
-                <div className="expCell">
+                <div className="expCell" data-label="Data">
                   <div className="expStrong">{fmtDate(e.date)}</div>
                 </div>
 
-                <div className="expCell">
+                <div className="expCell" data-label="Descrição">
                   <div className="expStrong">{e.description}</div>
                 </div>
 
-                <div className="expCell">
+                <div className="expCell" data-label="Categoria">
                   <div className="expStrong">{e.category}</div>
                 </div>
 
-                <div className="expCell">
+                <div className="expCell" data-label="Valor">
                   <div className="expAmount">{eur(e.amount)}</div>
                 </div>
 
-                <div className="expCell expRight">
+                <div className="expCell expRight" data-label="Ações">
                   <div className="expRowActions">
-                    <button className="btn" onClick={() => startEdit(e)} disabled={loading}>
+                    <button
+                      className="btn"
+                      onClick={() => startEdit(e)}
+                      disabled={loading}
+                    >
                       Editar
                     </button>
-                    <button className="btn danger" onClick={() => del(e.id)} disabled={loading}>
+                    <button
+                      className="btn danger"
+                      onClick={() => del(e.id)}
+                      disabled={loading}
+                    >
                       Apagar
                     </button>
                   </div>
@@ -433,12 +443,19 @@ export default function Expenses() {
                     <div className="expEditFields">
                       <label>
                         <span>Data e hora</span>
-                        <input type="datetime-local" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} />
+                        <input
+                          type="datetime-local"
+                          value={editDate}
+                          onChange={(ev) => setEditDate(ev.target.value)}
+                        />
                       </label>
 
                       <label>
                         <span>Categoria</span>
-                        <select value={editCategory} onChange={(ev) => setEditCategory(ev.target.value)}>
+                        <select
+                          value={editCategory}
+                          onChange={(ev) => setEditCategory(ev.target.value)}
+                        >
                           {CATEGORIES.map((c) => (
                             <option key={c.value} value={c.value}>
                               {c.label}
@@ -453,27 +470,40 @@ export default function Expenses() {
                           <input
                             value={editCustomCategory}
                             onChange={(ev) => setEditCustomCategory(ev.target.value)}
-                            placeholder="ex: PUBLICIDADE, SEGURO..."
                           />
                         </label>
                       )}
 
                       <label className="expSpanAll">
                         <span>Descrição</span>
-                        <input value={editDescription} onChange={(ev) => setEditDescription(ev.target.value)} />
+                        <input
+                          value={editDescription}
+                          onChange={(ev) => setEditDescription(ev.target.value)}
+                        />
                       </label>
 
                       <label>
                         <span>Valor (€)</span>
-                        <input value={editAmount} onChange={(ev) => setEditAmount(ev.target.value)} />
+                        <input
+                          value={editAmount}
+                          onChange={(ev) => setEditAmount(ev.target.value)}
+                        />
                       </label>
                     </div>
 
                     <div className="expActions">
-                      <button className="btn" onClick={() => saveEdit(e.id)} disabled={loading}>
+                      <button
+                        className="btn"
+                        onClick={() => saveEdit(e.id)}
+                        disabled={loading}
+                      >
                         Salvar
                       </button>
-                      <button className="btn ghost" onClick={cancelEdit} disabled={loading}>
+                      <button
+                        className="btn ghost"
+                        onClick={cancelEdit}
+                        disabled={loading}
+                      >
                         Cancelar
                       </button>
                     </div>

@@ -338,11 +338,15 @@
   }
 
   .stockPage .row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     grid-template-areas:
-      "name actions"
-      "stock actions"
-      "cost actions";
+      "name"
+      "stock"
+      "cost"
+      "actions";
+    gap: 10px;
+    padding: 12px;
+    align-items: stretch;
   }
 
   .stockPage .idcl {
@@ -353,12 +357,6 @@
     grid-area: name;
   }
 
-  .stockPage .actionsCell {
-    grid-area: actions;
-    align-self: start;
-    justify-content: flex-end;
-  }
-
   .stockPage .row .cell:nth-child(3) {
     grid-area: stock;
   }
@@ -367,68 +365,141 @@
     grid-area: cost;
   }
 
+  .stockPage .actionsCell {
+    grid-area: actions;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    justify-content: stretch;
+  }
+
+  .stockPage .actionsCell .btn {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+    text-align: center;
+  }
+
   .stockPage .cell {
+    width: 100%;
     white-space: normal;
     overflow-wrap: anywhere;
   }
+
+  .stockPage .badgesRow {
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .stockPage .badge {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
 }
 
-/* modal */
-.stockModalBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 1000;
-}
+@media (max-width: 520px) {
+  .stockPage {
+    gap: 12px;
+  }
 
-.stockModalCard {
-  width: min(720px, 100%);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 12px;
-}
-
-.stockModalTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-
-.stockModalTop h3 {
-  margin: 0;
-  color: var(--text);
-}
-
-/* light refinements */
-:root[data-theme="light"] .stockPage .row,
-:root[data-theme="light"] .stockPage .edit-form,
-:root[data-theme="light"] .stockPage .card-cliente {
-  background: rgba(15,23,42,0.02);
-}
-
-:root[data-theme="light"] .stockPage .row:hover {
-  background: rgba(15,23,42,0.04);
-  box-shadow: 0 8px 18px rgba(15,23,42,0.08);
-}
-
-/* animations */
-@keyframes popIn {
-  from { opacity: 0; transform: translateY(6px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stockPage .edit-form,
-  .stockPage .row,
   .stockPage .card-cliente {
-    animation: none;
-    transition: none;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+  }
+
+  .stockPage .clientsTop {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .stockPage .clientsTitle {
+    font-size: 16px;
+  }
+
+  .stockPage .novo-cliente {
+    margin-bottom: 16px;
+    align-items: stretch;
+  }
+
+  .stockPage .edit-form {
+    max-width: 100%;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .stockPage .formHeader {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stockPage .edit-form .fields {
+    grid-template-columns: 1fr;
+  }
+
+  .stockPage .spanAll {
+    grid-column: auto;
+  }
+
+  .stockPage .edit-form input,
+  .stockPage .edit-form textarea,
+  .stockPage .edit-form select {
+    min-height: 44px;
+    padding: 10px 11px;
+    font-size: 16px;
+  }
+
+  .stockPage .btn-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stockPage .btn-form .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .stockPage .row {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .stockPage .nameCell b {
+    font-size: 14px;
+  }
+
+  .stockPage .subLine {
+    font-size: 12px;
+  }
+
+  .stockPage .actionsCell {
+    grid-template-columns: 1fr;
+  }
+
+  .stockModalBackdrop {
+    padding: 10px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .stockModalCard {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .stockModalTop {
+    align-items: flex-start;
+  }
+
+  .stockModalTop h3 {
+    font-size: 14px;
   }
 }
