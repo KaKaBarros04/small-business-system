@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -10,6 +9,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from app.models.client import Client
 from app.models.company import Company
@@ -17,8 +18,41 @@ from app.models.site_map import SiteMap
 from app.models.monitoring_visit import MonitoringVisit
 
 
-BASE_DIR = Path(__file__).resolve().parents[2]   # backend/
+BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BASE_DIR / "uploads"
+
+FONT_REGULAR = "Helvetica"
+FONT_BOLD = "Helvetica-Bold"
+
+
+def _register_pdf_fonts():
+    global FONT_REGULAR, FONT_BOLD
+
+    candidates = [
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
+            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
+        ),
+        (
+            "/app/fonts/DejaVuSans.ttf",
+            "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+    ]
+
+    for regular, bold in candidates:
+        if Path(regular).exists() and Path(bold).exists():
+            pdfmetrics.registerFont(TTFont("AppFont", regular))
+            pdfmetrics.registerFont(TTFont("AppFont-Bold", bold))
+            FONT_REGULAR = "AppFont"
+            FONT_BOLD = "AppFont-Bold"
+            return
+
+
+_register_pdf_fonts()
 
 
 def _safe(x, fallback="—"):
@@ -50,11 +84,11 @@ def _draw_company_header(c: canvas.Canvas, company: Company, title: str, page_w:
     margin = 14 * mm
     top = page_h - margin
 
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 14)
     c.setFillColor(colors.black)
     c.drawString(margin, top, title)
 
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     info_y = top - 14
     line_h = 11
 
@@ -64,6 +98,7 @@ def _draw_company_header(c: canvas.Canvas, company: Company, title: str, page_w:
         f"Morada: {_safe(getattr(company, 'address', None))}",
         f"Telefone: {_safe(getattr(company, 'phone', None))}   Email: {_safe(getattr(company, 'email', None))}",
     ]
+
     for i, ln in enumerate(lines):
         c.drawString(margin, info_y - i * line_h, ln)
 
@@ -92,7 +127,8 @@ def _draw_footer(c: canvas.Canvas, page_w: float):
     margin = 14 * mm
     y = 10 * mm
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
-    c.setFont("Helvetica", 8)
+
+    c.setFont(FONT_REGULAR, 8)
     c.setFillColor(colors.HexColor("#6B7280"))
     c.drawString(margin, y, f"Gerado em {now}")
     c.drawRightString(page_w - margin, y, f"Página {c.getPageNumber()}")
@@ -133,8 +169,7 @@ def _draw_marker(c: canvas.Canvas, cx: float, cy: float, point_number: int, devi
     c.setLineWidth(1)
 
     if shape == "circle":
-        r = 8
-        c.circle(cx, cy, r, stroke=1, fill=1)
+        c.circle(cx, cy, 8, stroke=1, fill=1)
     elif shape == "square":
         s = 15
         c.rect(cx - s / 2, cy - s / 2, s, s, stroke=1, fill=1)
@@ -153,12 +188,12 @@ def _draw_marker(c: canvas.Canvas, cx: float, cy: float, point_number: int, devi
         c.circle(cx, cy, 8, stroke=1, fill=1)
 
     c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 8)
+    c.setFont(FONT_BOLD, 8)
     c.drawCentredString(cx, cy - 3, str(point_number))
 
 
 def _draw_legend(c: canvas.Canvas, x: float, y: float):
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.setFillColor(colors.black)
     c.drawString(x, y, "Legenda")
     y -= 12
@@ -173,7 +208,7 @@ def _draw_legend(c: canvas.Canvas, x: float, y: float):
     for device_type, label in items:
         _draw_marker(c, x + 8, y + 4, 0, device_type)
         c.setFillColor(colors.black)
-        c.setFont("Helvetica", 8)
+        c.setFont(FONT_REGULAR, 8)
         c.drawString(x + 20, y, label)
         y -= 16
 
@@ -187,10 +222,11 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
     _draw_company_header(c, company, f"Mapa técnico — {site_map.name}", page_w, page_h)
 
     info_y = page_h - margin - 58 * mm
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(FONT_BOLD, 10)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, info_y, "Cliente")
-    c.setFont("Helvetica", 9)
+
+    c.setFont(FONT_REGULAR, 9)
     info_y -= 12
     c.drawString(margin, info_y, f"Código: {_safe(getattr(client, 'client_code', None), str(client.id))}")
     info_y -= 11
@@ -198,7 +234,15 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
     info_y -= 11
     c.drawString(margin, info_y, f"NIF: {_safe(getattr(client, 'vat_number', None))}")
     info_y -= 11
-    morada = " ".join([x for x in [getattr(client, "address", None), getattr(client, "postal_code", None), getattr(client, "city", None)] if x])
+
+    morada = " ".join([
+        x for x in [
+            getattr(client, "address", None),
+            getattr(client, "postal_code", None),
+            getattr(client, "city", None),
+        ] if x
+    ])
+
     c.drawString(margin, info_y, f"Morada: {_safe(morada)}")
 
     map_x = margin
@@ -210,6 +254,7 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
     c.rect(map_x, map_y, map_w, map_h, stroke=1, fill=0)
 
     img_abs = _img_abs_path(site_map.image_path)
+
     if img_abs and img_abs.exists():
         try:
             reader = ImageReader(str(img_abs))
@@ -233,27 +278,31 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
             for p in site_map.points:
                 if not p.is_active:
                     continue
+
                 cx = draw_x + (p.x_percent / 100.0) * draw_w
                 cy = draw_y + ((100.0 - p.y_percent) / 100.0) * draw_h
                 _draw_marker(c, cx, cy, p.point_number, p.device_type)
+
         except Exception:
-            c.setFont("Helvetica", 10)
+            c.setFont(FONT_REGULAR, 10)
             c.drawString(map_x + 10, map_y + map_h - 20, "Erro ao carregar imagem da planta.")
     else:
-        c.setFont("Helvetica", 10)
+        c.setFont(FONT_REGULAR, 10)
         c.drawString(map_x + 10, map_y + map_h - 20, "Imagem da planta não encontrada.")
 
     _draw_legend(c, map_x + map_w + 12 * mm, page_h - margin - 75 * mm)
 
     obs_y = 32 * mm
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.drawString(margin, obs_y, "Observações")
-    c.setFont("Helvetica", 9)
+
+    c.setFont(FONT_REGULAR, 9)
     c.drawString(margin, obs_y - 12, _safe(site_map.notes, ""))
 
     _draw_footer(c, page_w)
     c.save()
     buf.seek(0)
+
     return buf.getvalue()
 
 
@@ -268,7 +317,7 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
     _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
 
     y = page_h - margin - 58 * mm
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(FONT_BOLD, 10)
     c.drawString(margin, y, "Dados da visita")
     y -= 12
 
@@ -278,19 +327,19 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         f"Data: {visit.visit_date.strftime('%d/%m/%Y %H:%M') if visit.visit_date else '—'}",
         f"Praga: {_safe(visit.pest_type or getattr(client, 'pest_type', None))}",
     ]
-    c.setFont("Helvetica", 9)
+
+    c.setFont(FONT_REGULAR, 9)
     for ln in lines:
         c.drawString(margin, y, ln)
         y -= 10
 
-    # mapa(s)
     for idx, site_map in enumerate(site_maps):
         if idx > 0:
             c.showPage()
             _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
             y = page_h - margin - 58 * mm
 
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont(FONT_BOLD, 10)
         c.drawString(margin, y, f"Mapa: {site_map.name}")
         y -= 8
 
@@ -303,6 +352,7 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         c.rect(map_x, map_y, map_w, map_h, stroke=1, fill=0)
 
         img_abs = _img_abs_path(site_map.image_path)
+
         if img_abs and img_abs.exists():
             try:
                 reader = ImageReader(str(img_abs))
@@ -326,14 +376,16 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
                 for p in site_map.points:
                     if not p.is_active:
                         continue
+
                     cx = draw_x + (p.x_percent / 100.0) * draw_w
                     cy = draw_y + ((100.0 - p.y_percent) / 100.0) * draw_h
                     _draw_marker(c, cx, cy, p.point_number, p.device_type)
+
             except Exception:
-                c.setFont("Helvetica", 10)
+                c.setFont(FONT_REGULAR, 10)
                 c.drawString(map_x + 10, map_y + map_h - 20, "Erro ao carregar imagem.")
         else:
-            c.setFont("Helvetica", 10)
+            c.setFont(FONT_REGULAR, 10)
             c.drawString(map_x + 10, map_y + map_h - 20, "Imagem da planta não encontrada.")
 
         _draw_legend(c, map_x + map_w + 10 * mm, page_h - margin - 85 * mm)
@@ -341,14 +393,21 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         table_x = margin
         table_y = 56 * mm
 
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont(FONT_BOLD, 9)
         c.drawString(table_x, table_y, "Resultados dos pontos")
         table_y -= 12
 
         headers = ["Ponto", "Tipo", "Estado", "Consumo%", "Ação", "Notas"]
-        col_x = [table_x, table_x + 14 * mm, table_x + 50 * mm, table_x + 72 * mm, table_x + 95 * mm, table_x + 126 * mm]
+        col_x = [
+            table_x,
+            table_x + 14 * mm,
+            table_x + 50 * mm,
+            table_x + 72 * mm,
+            table_x + 95 * mm,
+            table_x + 126 * mm,
+        ]
 
-        c.setFont("Helvetica-Bold", 8)
+        c.setFont(FONT_BOLD, 8)
         for i, h in enumerate(headers):
             c.drawString(col_x[i], table_y, h)
 
@@ -356,33 +415,38 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         c.line(table_x, table_y, page_w - margin, table_y)
         table_y -= 10
 
-        c.setFont("Helvetica", 8)
+        c.setFont(FONT_REGULAR, 8)
         for p in site_map.points:
             r = results_by_point_id.get(p.id)
+
             c.drawString(col_x[0], table_y, str(p.point_number))
             c.drawString(col_x[1], table_y, _device_label(p.device_type)[:22])
             c.drawString(col_x[2], table_y, _safe(getattr(r, "status_code", None), "—"))
+
             cons = getattr(r, "consumption_percent", None)
             c.drawString(col_x[3], table_y, f"{float(cons):.0f}%" if cons is not None else "—")
             c.drawString(col_x[4], table_y, _safe(getattr(r, "action_taken", None), "—")[:16])
             c.drawString(col_x[5], table_y, _safe(getattr(r, "notes", None), "—")[:30])
+
             table_y -= 10
 
             if table_y < 22 * mm:
                 break
 
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont(FONT_BOLD, 9)
         c.drawString(margin, 18 * mm, "Observações gerais:")
-        c.setFont("Helvetica", 9)
+
+        c.setFont(FONT_REGULAR, 9)
         c.drawString(margin + 35 * mm, 18 * mm, _safe(visit.notes, ""))
 
         _draw_footer(c, page_w)
 
     if not site_maps:
-        c.setFont("Helvetica", 10)
+        c.setFont(FONT_REGULAR, 10)
         c.drawString(margin, 100 * mm, "Não existem mapas cadastrados para este cliente.")
         _draw_footer(c, page_w)
 
     c.save()
     buf.seek(0)
+
     return buf.getvalue()

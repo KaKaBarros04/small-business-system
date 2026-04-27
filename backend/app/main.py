@@ -30,7 +30,6 @@ from app.routers import admin_users
 from app.routers.permissions_me import router as permissions_me_router
 from app.routers.dossiers import router as dossiers_router
 from app.core.audit_listeners import register_audit_listeners
-from app.routers.dossiers import router as dossiers_router
 from app.routers import site_maps
 from app.routers import permissions
 
@@ -71,7 +70,6 @@ app.include_router(reports_extra.router)
 app.include_router(admin_permissions_router)
 app.include_router(admin_users.router)
 app.include_router(permissions_me_router)
-app.include_router(dossiers_router)
 app.include_router(dossiers_router)
 app.include_router(site_maps.router)
 app.include_router(permissions.router)

@@ -99,57 +99,44 @@ export default function Clients() {
 
   const filteredClients = useMemo(() => {
     const qq = norm(q).trim();
-
     const base = onlyActive ? clients.filter((c) => c?.is_active !== false) : clients;
 
-    const filtered =
-      !qq
-        ? base
-        : base.filter((c) => {
-            const hay = [
-              c?.id,
-              c?.client_code,
+    const filtered = !qq
+      ? base
+      : base.filter((c) => {
+          const hay = [
+            c?.id,
+            c?.client_code,
+            c?.business_name,
+            c?.name,
+            c?.nickname,
+            c?.contact_name,
+            c?.email,
+            c?.phone,
+            c?.vat_number,
+            c?.address,
+            c?.postal_code,
+            c?.city,
+            c?.notes,
+            c?.pest_type,
+          ]
+            .map(norm)
+            .join(" • ");
 
-              c?.business_name,
-              c?.name,
-              c?.nickname,
-              c?.contact_name,
-
-              c?.email,
-              c?.phone,
-
-              c?.vat_number,
-              c?.address,
-              c?.postal_code,
-              c?.city,
-
-              c?.notes,
-              c?.pest_type,
-            ]
-              .map(norm)
-              .join(" • ");
-
-            const tokens = qq.split(/\s+/).filter(Boolean);
-            return tokens.every((t) => hay.includes(t));
-          });
+          const tokens = qq.split(/\s+/).filter(Boolean);
+          return tokens.every((t) => hay.includes(t));
+        });
 
     return [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   }, [clients, q, onlyActive]);
 
   const visibleIds = useMemo(() => filteredClients.map((c) => c.id), [filteredClients]);
 
-  const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
-
-  const someVisibleSelected =
-    visibleIds.length > 0 && visibleIds.some((id) => selectedIds.includes(id));
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+  const someVisibleSelected = visibleIds.length > 0 && visibleIds.some((id) => selectedIds.includes(id));
 
   function toggleSelected(id) {
-    setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id]
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function toggleSelectAllVisible() {
@@ -193,7 +180,7 @@ export default function Clients() {
       postal_code: c?.postal_code || "",
       city: c?.city || "",
 
-      pest_type: isDesinfex ? (c?.pest_type || "") : "",
+      pest_type: isDesinfex ? c?.pest_type || "" : "",
       notes: c?.notes || "",
 
       has_contract: isDesinfex ? !!c?.has_contract : false,
@@ -235,34 +222,25 @@ export default function Clients() {
 
     const payload = {
       name: form.name?.trim() || "",
-
       email: form.email?.trim() || null,
       phone: form.phone?.trim() || null,
-
       client_code: form.client_code?.trim() || null,
-
       business_name: form.business_name?.trim() || null,
-
       contact_name: form.contact_name?.trim() || null,
       nickname: form.nickname?.trim() || null,
-
       vat_number: form.vat_number?.trim() || null,
       address: form.address?.trim() || null,
       postal_code: form.postal_code?.trim() || null,
       city: form.city?.trim() || null,
-
       notes: form.notes?.trim() || null,
-
       is_active: editingId ? !!form.is_active : true,
     };
 
     if (isDesinfex) {
       payload.pest_type = form.pest_type?.trim() || null;
-
       payload.has_contract = !!form.has_contract;
-      payload.contract_start_date = form.has_contract ? (form.contract_start_date || null) : null;
+      payload.contract_start_date = form.has_contract ? form.contract_start_date || null : null;
       payload.visits_per_year = form.has_contract ? Number(form.visits_per_year || 1) : null;
-
       payload.contract_value_yearly = form.has_contract ? toNum(form.contract_value_yearly) : null;
     } else {
       payload.pest_type = null;
@@ -328,11 +306,7 @@ export default function Clients() {
     setLoading(true);
 
     try {
-      const res = await api.bulkDeleteClients({
-        ids: selectedIds,
-        force,
-      });
-
+      const res = await api.bulkDeleteClients({ ids: selectedIds, force });
       const deletedIds = Array.isArray(res?.deleted_ids) ? res.deleted_ids : [];
       const blocked = Array.isArray(res?.blocked) ? res.blocked : [];
 
@@ -403,6 +377,7 @@ export default function Clients() {
       setErr("Escolhe a data de início do novo ciclo (renew_start_date)");
       return;
     }
+
     const v = Number(renewVPY || 0);
     if (!Number.isFinite(v) || v < 1 || v > 12) {
       setErr("Visitas por ano tem de ser entre 1 e 12");
@@ -411,7 +386,7 @@ export default function Clients() {
 
     const cv = toNum(renewValue);
     if (renewValue !== "" && (cv == null || cv < 0)) {
-      setErr("Valor do contrato (€/ano) inválido)");
+      setErr("Valor do contrato (€/ano) inválido");
       return;
     }
 
@@ -458,6 +433,73 @@ export default function Clients() {
       {loading && <p className="status">A carregar...</p>}
       {msg && <p className="msg ok">{msg}</p>}
       {err && <p className="msg error">{err}</p>}
+
+      <div className="pdfQuickPanel">
+        <div className="dashPeriod">
+          <label>
+            <div>Ano</div>
+            <input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value || 0))}
+              min={1900}
+              max={3000}
+            />
+          </label>
+
+          <label>
+            <div>Mês</div>
+            <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              <option value={1}>Janeiro</option>
+              <option value={2}>Fevereiro</option>
+              <option value={3}>Março</option>
+              <option value={4}>Abril</option>
+              <option value={5}>Maio</option>
+              <option value={6}>Junho</option>
+              <option value={7}>Julho</option>
+              <option value={8}>Agosto</option>
+              <option value={9}>Setembro</option>
+              <option value={10}>Outubro</option>
+              <option value={11}>Novembro</option>
+              <option value={12}>Dezembro</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="dashActions">
+          <button
+            className="btn btn-soft"
+            onClick={() => {
+              const y = Number(year);
+              const m = Number(month);
+              if (!y || !m) return alert("Seleciona ano e mês primeiro.");
+              api.openVisitsPdf(y, m);
+            }}
+          >
+            📄 PDF Visitas
+          </button>
+
+          <button className="btn btn-soft" onClick={() => api.openStockPdf({ only_restock: true })}>
+            🧾 Stock (Repor)
+          </button>
+
+          <button className="btn btn-soft" onClick={() => api.openClientsPdf({ contract_only: true })}>
+            👥 Clientes (Contrato)
+          </button>
+
+          <button
+            className="btn btn-soft"
+            onClick={() => {
+              const y = Number(year);
+              const m = Number(month);
+              if (!y || !m) return alert("Seleciona ano e mês primeiro.");
+              api.openExpensesPdf(y, m);
+            }}
+          >
+            💸 Despesas (período)
+          </button>
+        </div>
+      </div>
 
       <div className="novo-cliente">
         <form onSubmit={save} className="edit-form">
@@ -679,9 +721,7 @@ SERVICE_CITY: (cidade)
                   onChange={(e) => setRenewValue(e.target.value)}
                   placeholder="ex: 200"
                 />
-                <small>
-                  Atual: {renewClient?.contract_value_yearly != null ? eur(renewClient.contract_value_yearly) : "—"}
-                </small>
+                <small>Atual: {renewClient?.contract_value_yearly != null ? eur(renewClient.contract_value_yearly) : "—"}</small>
               </label>
             </div>
 
@@ -731,12 +771,7 @@ SERVICE_CITY: (cidade)
             {allVisibleSelected ? "Desmarcar visíveis" : "Selecionar visíveis"}
           </button>
 
-          <button
-            className="btn"
-            type="button"
-            onClick={() => removeSelected(false)}
-            disabled={loading || selectedIds.length === 0}
-          >
+          <button className="btn" type="button" onClick={() => removeSelected(false)} disabled={loading || selectedIds.length === 0}>
             Apagar selecionados ({selectedIds.length})
           </button>
 
@@ -750,12 +785,7 @@ SERVICE_CITY: (cidade)
             Apagar com force ({selectedIds.length})
           </button>
 
-          <button
-            className="btn ghost"
-            type="button"
-            onClick={clearSelection}
-            disabled={loading || selectedIds.length === 0}
-          >
+          <button className="btn ghost" type="button" onClick={clearSelection} disabled={loading || selectedIds.length === 0}>
             Limpar seleção
           </button>
         </div>
@@ -794,11 +824,7 @@ SERVICE_CITY: (cidade)
                   <div className="clientCard">
                     <div className="clientsRow">
                       <div style={{ width: 40, display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(c.id)}
-                          onChange={() => toggleSelected(c.id)}
-                        />
+                        <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleSelected(c.id)} />
                       </div>
 
                       <div className="idcl">{c.client_code || c.id}</div>
@@ -861,71 +887,6 @@ SERVICE_CITY: (cidade)
             </ul>
           </>
         )}
-
-        <div className="dashPeriod">
-          <label>
-            <div>Ano</div>
-            <input
-              type="number"
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value || 0))}
-              min={1900}
-              max={3000}
-            />
-          </label>
-
-          <label>
-            <div>Mês</div>
-            <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              <option value={1}>Janeiro</option>
-              <option value={2}>Fevereiro</option>
-              <option value={3}>Março</option>
-              <option value={4}>Abril</option>
-              <option value={5}>Maio</option>
-              <option value={6}>Junho</option>
-              <option value={7}>Julho</option>
-              <option value={8}>Agosto</option>
-              <option value={9}>Setembro</option>
-              <option value={10}>Outubro</option>
-              <option value={11}>Novembro</option>
-              <option value={12}>Dezembro</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="dashActions">
-          <button
-            className="btn btn-soft"
-            onClick={() => {
-              const y = Number(year);
-              const m = Number(month);
-              if (!y || !m) return alert("Seleciona ano e mês primeiro.");
-              api.openVisitsPdf(y, m);
-            }}
-          >
-            📄 PDF Visitas
-          </button>
-
-          <button className="btn btn-soft" onClick={() => api.openStockPdf({ only_restock: true })}>
-            🧾 Stock (Repor)
-          </button>
-
-          <button className="btn btn-soft" onClick={() => api.openClientsPdf({ contract_only: true })}>
-            👥 Clientes (Contrato)
-          </button>
-
-          <button
-            className="btn btn-soft"
-            onClick={() => {
-              const y = Number(year);
-              const m = Number(month);
-              if (!y || !m) return alert("Seleciona ano e mês primeiro.");
-              api.openExpensesPdf(y, m);
-            }}
-          >
-            💸 Despesas (período)
-          </button>
-        </div>
       </div>
     </div>
   );

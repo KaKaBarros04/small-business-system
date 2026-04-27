@@ -2,38 +2,69 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Callable, Dict, Any, List, Tuple
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from pypdf import PdfReader, PdfWriter
 
-from app.models.appointment import Appointment
+
+DOSSIER_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+FONT_REGULAR = "Helvetica"
+FONT_BOLD = "Helvetica-Bold"
 
 
-# =========================
-# CONFIG: Ajustes de layout (mm)
-# =========================
+def _register_pdf_fonts():
+    global FONT_REGULAR, FONT_BOLD
+
+    candidates = [
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
+            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
+        ),
+        (
+            "/app/fonts/DejaVuSans.ttf",
+            "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+    ]
+
+    for regular, bold in candidates:
+        if Path(regular).exists() and Path(bold).exists():
+            pdfmetrics.registerFont(TTFont("AppFont", regular))
+            pdfmetrics.registerFont(TTFont("AppFont-Bold", bold))
+            FONT_REGULAR = "AppFont"
+            FONT_BOLD = "AppFont-Bold"
+            return
+
+
+_register_pdf_fonts()
+
+
 COORDS = {
-    # CAPA
     "cover": {
-        "client_no": (62, 137),  # (x_mm, y_mm)
+        "client_no": (62, 137),
         "name": (50, 126),
         "addr1": (60, 100),
         "addr2": (60, 90),
         "erase": {
-            "client_no": (70, 108, 120, 10),  # x,y,w,h  (mm)
+            "client_no": (70, 108, 120, 10),
             "name": (70, 98, 130, 10),
             "addr": (70, 72, 160, 26),
         },
-        "font": ("Helvetica", 11),
+        "font": (FONT_REGULAR, 11),
     },
-
-    # CERTIFICADO
     "cert": {
         "block_erase": (40, 500, 160, 60),
         "date_erase": (48, 500, 55, 10),
@@ -42,10 +73,8 @@ COORDS = {
         "addr1": (103, 120),
         "addr2": (103, 115),
         "date": (55, 53),
-        "font": ("Helvetica", 10),
+        "font": (FONT_REGULAR, 10),
     },
-
-    # CONTRATO
     "contract": {
         "erase": {
             "left": (40, 500, 72, 48),
@@ -66,20 +95,16 @@ COORDS = {
             "addr1": (150, 238),
             "addr2": (150, 233),
         },
-        "label": (95, 203),         # ORIGINAL/DUPLICADO
-        "contract_no": (140, 203),  # Nº 7003
-        "value": (50, 115),         # "200,00 EUROS"
-        "visits": (119, 108),       # "03"
+        "label": (95, 203),
+        "contract_no": (140, 203),
+        "value": (50, 115),
+        "visits": (119, 108),
         "service_addr1": (40, 80),
         "service_addr2": (40, 75),
     },
 }
 
 
-# =========================
-# Templates: nomes fixos (sem adivinhação)
-# =========================
-DOSSIER_DIR = Path(__file__).resolve().parent
 PDF_TPL_DIR = DOSSIER_DIR / "pdf_templates"
 PDF_ATTACH_DIR = DOSSIER_DIR / "pdf_annexes"
 
@@ -93,14 +118,11 @@ TEMPLATES = {
     "CONTRATO_CONDICOES": PDF_TPL_DIR / "contrato_condicoes.pdf",
 }
 
-# FT primeiro, depois FDS
 ANNEXES = [
     PDF_ATTACH_DIR / "FT MICROSIN.pdf",
     PDF_ATTACH_DIR / "FDS_MICROSIN.pdf",
-
     PDF_ATTACH_DIR / "FT RATROM 3G ISCO FRESCO.pdf",
     PDF_ATTACH_DIR / "FDS RATROM 3G ISCO FRESCO PROFISSIONAL 20230308.pdf",
-
     PDF_ATTACH_DIR / "Maxforce Prime FT.pdf",
     PDF_ATTACH_DIR / "Maxforce Prime FDS.pdf",
 ]
@@ -111,18 +133,15 @@ def _ensure_templates_exist():
     if missing:
         found = "\n".join(sorted([p.name for p in PDF_TPL_DIR.glob("*.pdf")]))
         raise FileNotFoundError(
-            "Templates PDF em falta (confere nomes fixos):\n"
+            "Templates PDF em falta:\n"
             + "\n".join(missing)
-            + "\n\nFicheiros encontrados na pasta:\n"
+            + "\n\nFicheiros encontrados:\n"
             + (found or "(nenhum PDF encontrado)")
             + "\n\nRenomeia para:\n"
             + "\n".join([f"- {v.name}" for v in TEMPLATES.values()])
         )
 
 
-# =========================
-# Helpers
-# =========================
 def _to_int(v, default=0) -> int:
     try:
         return int(v)
@@ -139,78 +158,12 @@ def _to_float(v, default=0.0) -> float:
         return default
 
 
-def _get_net_value_from_gross(gross_value: Any, vat_rate: Any = 0.23) -> float | None:
-    """
-    Recebe um valor com IVA e devolve o valor sem IVA.
-    vat_rate pode vir como:
-      - 0.23
-      - 23
-      - "0.23"
-      - "23"
-    """
-    if gross_value in (None, ""):
-        return None
-
-    try:
-        gross = _to_float(gross_value, None)
-        if gross is None:
-            return None
-
-        rate = _to_float(vat_rate, 0.23)
-
-        # Se vier 23 em vez de 0.23
-        if rate > 1:
-            rate = rate / 100.0
-
-        if rate < 0:
-            rate = 0.23
-
-        return gross / (1 + rate)
-    except Exception:
-        return None
-
-
-def _wrap_text(
-    c: canvas.Canvas,
-    text: str,
-    x: float,
-    y: float,
-    max_width: float,
-    font="Helvetica",
-    size=11,
-    leading=13,
-) -> float:
-    if not text:
-        return y
-    c.setFont(font, size)
-    words = str(text).split()
-    line = ""
-    lines: List[str] = []
-
-    for w in words:
-        test = (line + " " + w).strip()
-        if stringWidth(test, font, size) <= max_width:
-            line = test
-        else:
-            if line:
-                lines.append(line)
-            line = w
-    if line:
-        lines.append(line)
-
-    yy = y
-    for ln in lines:
-        c.drawString(x, yy, ln)
-        yy -= leading
-    return yy
-
-
 def _fit_text_lines(
     text: str,
     max_lines: int,
     c: canvas.Canvas,
     max_width: float,
-    font="Helvetica",
+    font=FONT_REGULAR,
     size=11,
 ) -> List[str]:
     if not text:
@@ -258,7 +211,7 @@ def _draw_fitted_text(
     y: float,
     max_width: float,
     max_lines: int,
-    font="Helvetica",
+    font=FONT_REGULAR,
     size=11,
     leading=12,
 ) -> float:
@@ -273,25 +226,21 @@ def _draw_fitted_text(
 
     c.setFont(font, size)
     yy = y
+
     for ln in lines:
         c.drawString(x, yy, ln)
         yy -= leading
+
     return yy
 
 
 def _template_page_size_points(template_pdf: Path) -> Tuple[float, float]:
     r = PdfReader(str(template_pdf))
     p = r.pages[0]
-    w = float(p.mediabox.width)
-    h = float(p.mediabox.height)
-    return w, h
+    return float(p.mediabox.width), float(p.mediabox.height)
 
 
 def _make_overlay_for_template(template_pdf: Path, draw_fn: Callable[[canvas.Canvas, Tuple[float, float]], None]) -> bytes:
-    """
-    Cria overlay com o MESMO tamanho (points) do template.
-    Isto corrige texto a aparecer no sítio errado por causa de CropBox/MediaBox diferentes.
-    """
     w, h = _template_page_size_points(template_pdf)
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
@@ -333,21 +282,12 @@ def _append_common_annexes(writer: PdfWriter):
             _append_pdf_file(writer, pdf_path)
 
 
-# =========================
-# "Notas" -> Morada de serviço (gambiarra controlada)
-# =========================
 def _parse_service_from_notes(notes: str) -> Dict[str, str]:
-    """
-    Permite guardar morada de serviço dentro do campo notas com tags:
-
-      SERVICE_ADDR: Rua X nº 10
-      SERVICE_PC: 1000-001
-      SERVICE_CITY: Lisboa
-    """
     if not notes:
         return {}
 
     out: Dict[str, str] = {}
+
     for raw in str(notes).splitlines():
         line = raw.strip()
         u = line.upper()
@@ -362,21 +302,15 @@ def _parse_service_from_notes(notes: str) -> Dict[str, str]:
     return {k: v for k, v in out.items() if v}
 
 
-# =========================
-# Overlays
-# =========================
 def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
     cfg = COORDS["cover"]
 
     def draw(c: canvas.Canvas, size):
-        # apagar blocos
         c.setFillColor(colors.white)
-        ex, ey, ew, eh = cfg["erase"]["client_no"]
-        c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
-        ex, ey, ew, eh = cfg["erase"]["name"]
-        c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
-        ex, ey, ew, eh = cfg["erase"]["addr"]
-        c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
+
+        for key in ["client_no", "name", "addr"]:
+            ex, ey, ew, eh = cfg["erase"][key]
+            c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
 
         font, fsize = cfg["font"]
         c.setFillColor(colors.black)
@@ -385,7 +319,6 @@ def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
         x, y = cfg["client_no"]
         c.drawString(x * mm, y * mm, str(ctx.get("client_number") or ""))
 
-        # NOME em 2 linhas (fantasia + legal) com quebra controlada
         x, y = cfg["name"]
         fantasy = str(ctx.get("client_fantasy") or "").strip()
         legal = str(ctx.get("client_legal") or "").strip()
@@ -395,38 +328,20 @@ def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
 
         if fantasy and legal and fantasy.lower() != legal.lower():
             y_after = _draw_fitted_text(
-                c,
-                fantasy,
-                x * mm,
-                start_y,
-                max_width=maxw,
-                max_lines=2,
-                font="Helvetica-Bold",
-                size=fsize,
-                leading=10,
+                c, fantasy, x * mm, start_y,
+                max_width=maxw, max_lines=2,
+                font=FONT_BOLD, size=fsize, leading=10,
             )
             _draw_fitted_text(
-                c,
-                legal,
-                x * mm,
-                y_after - 1 * mm,
-                max_width=maxw,
-                max_lines=2,
-                font="Helvetica",
-                size=fsize,
-                leading=10,
+                c, legal, x * mm, y_after - 1 * mm,
+                max_width=maxw, max_lines=2,
+                font=FONT_REGULAR, size=fsize, leading=10,
             )
         else:
             _draw_fitted_text(
-                c,
-                fantasy or legal,
-                x * mm,
-                start_y,
-                max_width=maxw,
-                max_lines=3,
-                font="Helvetica-Bold",
-                size=fsize,
-                leading=10,
+                c, fantasy or legal, x * mm, start_y,
+                max_width=maxw, max_lines=3,
+                font=FONT_BOLD, size=fsize, leading=10,
             )
 
         addr1 = str(ctx.get("service_address") or ctx.get("fiscal_address") or "").strip()
@@ -434,28 +349,16 @@ def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
 
         x, y = cfg["addr1"]
         _draw_fitted_text(
-            c,
-            addr1,
-            x * mm,
-            y * mm,
-            max_width=120 * mm,
-            max_lines=2,
-            font=font,
-            size=fsize,
-            leading=11,
+            c, addr1, x * mm, y * mm,
+            max_width=120 * mm, max_lines=2,
+            font=font, size=fsize, leading=11,
         )
 
         x, y = cfg["addr2"]
         _draw_fitted_text(
-            c,
-            addr2,
-            x * mm,
-            y * mm,
-            max_width=120 * mm,
-            max_lines=1,
-            font=font,
-            size=fsize,
-            leading=11,
+            c, addr2, x * mm, y * mm,
+            max_width=120 * mm, max_lines=1,
+            font=font, size=fsize, leading=11,
         )
 
     return _make_overlay_for_template(template_pdf, draw)
@@ -466,16 +369,16 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
     font, fsize = cfg["font"]
 
     def draw(c: canvas.Canvas, size):
-        # apagar bloco do cliente e data
         c.setFillColor(colors.white)
+
         ex, ey, ew, eh = cfg["block_erase"]
         c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
+
         ex, ey, ew, eh = cfg["date_erase"]
         c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
 
         c.setFillColor(colors.black)
 
-        # NOME em 2 linhas com quebra controlada
         x, y = cfg["name"]
         fantasy = str(ctx.get("client_fantasy") or "").strip()
         legal = str(ctx.get("client_legal") or "").strip()
@@ -485,38 +388,20 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
 
         if fantasy and legal and fantasy.lower() != legal.lower():
             y_after = _draw_fitted_text(
-                c,
-                fantasy,
-                x * mm,
-                start_y,
-                max_width=maxw,
-                max_lines=2,
-                font="Helvetica-Bold",
-                size=fsize,
-                leading=9,
+                c, fantasy, x * mm, start_y,
+                max_width=maxw, max_lines=2,
+                font=FONT_BOLD, size=fsize, leading=9,
             )
             _draw_fitted_text(
-                c,
-                legal,
-                x * mm,
-                y_after - 1 * mm,
-                max_width=maxw,
-                max_lines=2,
-                font=font,
-                size=fsize,
-                leading=9,
+                c, legal, x * mm, y_after - 1 * mm,
+                max_width=maxw, max_lines=2,
+                font=FONT_REGULAR, size=fsize, leading=9,
             )
         else:
             _draw_fitted_text(
-                c,
-                fantasy or legal,
-                x * mm,
-                start_y,
-                max_width=maxw,
-                max_lines=3,
-                font="Helvetica-Bold",
-                size=fsize,
-                leading=9,
+                c, fantasy or legal, x * mm, start_y,
+                max_width=maxw, max_lines=3,
+                font=FONT_BOLD, size=fsize, leading=9,
             )
 
         x, y = cfg["nif"]
@@ -528,28 +413,16 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
 
         x, y = cfg["addr1"]
         _draw_fitted_text(
-            c,
-            addr1,
-            x * mm,
-            y * mm,
-            max_width=110 * mm,
-            max_lines=2,
-            font=font,
-            size=fsize,
-            leading=10,
+            c, addr1, x * mm, y * mm,
+            max_width=110 * mm, max_lines=2,
+            font=font, size=fsize, leading=10,
         )
 
         x, y = cfg["addr2"]
         _draw_fitted_text(
-            c,
-            addr2,
-            x * mm,
-            y * mm,
-            max_width=110 * mm,
-            max_lines=1,
-            font=font,
-            size=fsize,
-            leading=10,
+            c, addr2, x * mm, y * mm,
+            max_width=110 * mm, max_lines=1,
+            font=font, size=fsize, leading=10,
         )
 
         x, y = cfg["date"]
@@ -562,151 +435,117 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
     cfg = COORDS["contract"]
 
     def draw(c: canvas.Canvas, size):
-        # apagar áreas
         c.setFillColor(colors.white)
         for _, (ex, ey, ew, eh) in cfg["erase"].items():
             c.rect(ex * mm, ey * mm, ew * mm, eh * mm, stroke=0, fill=1)
 
         c.setFillColor(colors.black)
-        c.setFont("Helvetica", 10)
+        c.setFont(FONT_REGULAR, 10)
 
-        # left block
         c.drawString(cfg["left"]["nif"][0] * mm, cfg["left"]["nif"][1] * mm, str(ctx.get("vat_number") or ""))
         c.drawString(cfg["left"]["phone"][0] * mm, cfg["left"]["phone"][1] * mm, str(ctx.get("phone") or ""))
         c.drawString(cfg["left"]["email"][0] * mm, cfg["left"]["email"][1] * mm, str(ctx.get("email") or ""))
         c.drawString(cfg["left"]["date"][0] * mm, cfg["left"]["date"][1] * mm, str(ctx.get("today_pt") or ""))
 
-        # right block (nome fantasia + legal com quebra controlada) + morada fiscal
         nx = cfg["right"]["name"][0] * mm
         ny = cfg["right"]["name"][1] * mm
         fantasy = str(ctx.get("client_fantasy") or "").strip()
         legal = str(ctx.get("client_legal") or "").strip()
-        maxw = 68 * mm  # um pouco menor para dar mais folga à direita
+        maxw = 68 * mm
 
         if fantasy and legal and fantasy.lower() != legal.lower():
             y_after = _draw_fitted_text(
-                c,
-                fantasy,
-                nx,
-                ny,
-                max_width=maxw,
-                max_lines=2,
-                font="Helvetica-Bold",
-                size=10,
-                leading=9,
+                c, fantasy, nx, ny,
+                max_width=maxw, max_lines=2,
+                font=FONT_BOLD, size=10, leading=9,
             )
             _draw_fitted_text(
-                c,
-                legal,
-                nx,
-                y_after - 1 * mm,
-                max_width=maxw,
-                max_lines=2,
-                font="Helvetica",
-                size=10,
-                leading=9,
+                c, legal, nx, y_after - 1 * mm,
+                max_width=maxw, max_lines=2,
+                font=FONT_REGULAR, size=10, leading=9,
             )
         else:
             _draw_fitted_text(
-                c,
-                fantasy or legal,
-                nx,
-                ny,
-                max_width=maxw,
-                max_lines=3,
-                font="Helvetica-Bold",
-                size=10,
-                leading=9,
+                c, fantasy or legal, nx, ny,
+                max_width=maxw, max_lines=3,
+                font=FONT_BOLD, size=10, leading=9,
             )
 
         fiscal1 = str(ctx.get("fiscal_address") or "").strip()
         fiscal2 = f"{ctx.get('postal_code') or ''} {ctx.get('city') or ''}".strip()
 
-        # morada fiscal:
         fiscal_x = 147 * mm
         fiscal1_y = 238 * mm
         fiscal2_y = 228 * mm
         fiscal_maxw = 55 * mm
 
         _draw_fitted_text(
-            c,
-            fiscal1,
-            fiscal_x,
-            fiscal1_y,
-            max_width=fiscal_maxw,
-            max_lines=2,
-            font="Helvetica",
-            size=9,
-            leading=8.5,
+            c, fiscal1, fiscal_x, fiscal1_y,
+            max_width=fiscal_maxw, max_lines=2,
+            font=FONT_REGULAR, size=9, leading=8.5,
         )
 
         _draw_fitted_text(
-            c,
-            fiscal2,
-            fiscal_x,
-            fiscal2_y,
-            max_width=fiscal_maxw,
-            max_lines=1,
-            font="Helvetica",
-            size=9,
-            leading=8.5,
+            c, fiscal2, fiscal_x, fiscal2_y,
+            max_width=fiscal_maxw, max_lines=1,
+            font=FONT_REGULAR, size=9, leading=8.5,
         )
 
-        # label ORIGINAL/DUPLICADO
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont(FONT_BOLD, 10)
         label = "DUPLICADO" if variant == "duplicado" else "ORIGINAL"
         c.drawString(cfg["label"][0] * mm, cfg["label"][1] * mm, label)
 
-        # Nº contrato
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(cfg["contract_no"][0] * mm, cfg["contract_no"][1] * mm, f"Nº {ctx.get('client_number') or ''}")
+        c.setFont(FONT_BOLD, 11)
+        c.drawString(
+            cfg["contract_no"][0] * mm,
+            cfg["contract_no"][1] * mm,
+            f"Nº {ctx.get('client_number') or ''}",
+        )
 
-        # value SEM IVA
         value = str(ctx.get("contract_value_yearly") or "").strip()
-        c.setFont("Helvetica", 11)
+        c.setFont(FONT_REGULAR, 11)
+
         if value:
             value_lines = _fit_text_lines(
                 f"{value} EUROS",
                 max_lines=1,
                 c=c,
                 max_width=60 * mm,
-                font="Helvetica",
+                font=FONT_REGULAR,
                 size=11,
             )
             if value_lines:
                 c.drawString(cfg["value"][0] * mm, cfg["value"][1] * mm, value_lines[0])
 
-        # visits
         visits = _to_int(ctx.get("visits_per_year"), 0)
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
+
         if visits:
             c.drawString(cfg["visits"][0] * mm, cfg["visits"][1] * mm, f"{visits:02d}")
 
-        # service address (morada de serviço)
         service1 = str(ctx.get("service_address") or fiscal1).strip()
         service2 = f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
 
-        c.setFont("Helvetica", 10)
+        c.setFont(FONT_REGULAR, 10)
+
         _draw_fitted_text(
-            c,
-            service1,
+            c, service1,
             cfg["service_addr1"][0] * mm,
             cfg["service_addr1"][1] * mm,
             max_width=120 * mm,
             max_lines=2,
-            font="Helvetica",
+            font=FONT_REGULAR,
             size=10,
             leading=10,
         )
 
         _draw_fitted_text(
-            c,
-            service2,
+            c, service2,
             cfg["service_addr2"][0] * mm,
             cfg["service_addr2"][1] * mm,
             max_width=120 * mm,
             max_lines=1,
-            font="Helvetica",
+            font=FONT_REGULAR,
             size=10,
             leading=10,
         )
@@ -714,21 +553,14 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
     return _make_overlay_for_template(template_pdf, draw)
 
 
-# =========================
-# Builder principal
-# =========================
 def build_client_dossier_pdf(db, client) -> bytes:
     _ensure_templates_exist()
 
     client_number = getattr(client, "client_code", None) or getattr(client, "id", "") or ""
 
-    # agora usamos 2 nomes:
-    # - fantasia (letreiro): business_name
-    # - legal (LDA): name
     client_fantasy = (getattr(client, "business_name", None) or "").strip()
     client_legal = (getattr(client, "name", None) or "").strip()
 
-    # fallback (se um vier vazio)
     if not client_fantasy and client_legal:
         client_fantasy = client_legal
     if not client_legal and client_fantasy:
@@ -742,10 +574,6 @@ def build_client_dossier_pdf(db, client) -> bytes:
     postal_code = getattr(client, "postal_code", None) or ""
     city = getattr(client, "city", None) or ""
 
-    # ==========================================================
-    # Morada de serviço via "notas" (SERVICE_ADDR / SERVICE_PC / SERVICE_CITY)
-    # tenta ler de client.service_* (se existir) -> senão busca nas notas -> senão usa fiscal
-    # ==========================================================
     notes = (
         getattr(client, "notes", None)
         or getattr(client, "note", None)
@@ -753,6 +581,7 @@ def build_client_dossier_pdf(db, client) -> bytes:
         or getattr(client, "obs", None)
         or ""
     )
+
     service_from_notes = _parse_service_from_notes(notes)
 
     service_address = (
@@ -772,15 +601,10 @@ def build_client_dossier_pdf(db, client) -> bytes:
     )
 
     visits_per_year = getattr(client, "visits_per_year", None) or 0
-
-    # ==========================================================
-    # VALOR DO CONTRATO: o campo actual já está SEM IVA
-    # aqui usamos o valor diretamente, sem converter
-    # ==========================================================
     contract_value_yearly_base = getattr(client, "contract_value_yearly", None)
 
-    # DATA DO CONTRATO = data de início definida (contract_start_date)
     contract_start = getattr(client, "contract_start_date", None)
+
     if isinstance(contract_start, str):
         try:
             contract_start_dt = datetime.fromisoformat(contract_start[:10]).date()
@@ -795,7 +619,6 @@ def build_client_dossier_pdf(db, client) -> bytes:
 
     contract_date_pt = (contract_start_dt or date.today()).strftime("%d/%m/%Y")
 
-    # valor sem IVA no formato "200,00"
     if contract_value_yearly_base is None:
         value_str = ""
     else:
@@ -805,63 +628,52 @@ def build_client_dossier_pdf(db, client) -> bytes:
             value_str = str(contract_value_yearly_base)
 
     ctx: Dict[str, Any] = {
-        # data usada no CERTIFICADO + CONTRATO é a data de início do contrato
         "today_pt": contract_date_pt,
-
         "client_number": client_number,
         "client_fantasy": client_fantasy,
         "client_legal": client_legal,
-
         "vat_number": vat_number,
         "email": email,
         "phone": phone,
-
         "fiscal_address": fiscal_address,
         "postal_code": postal_code,
         "city": city,
-
         "service_address": service_address,
         "service_postal_code": service_postal_code,
         "service_city": service_city,
-
         "visits_per_year": visits_per_year,
         "contract_value_yearly": value_str,
     }
 
     w = PdfWriter()
 
-    # 1) CAPA (overlay)
     capa_pdf = TEMPLATES["CAPA"]
     capa_final = _overlay_on_template(capa_pdf, _draw_cover_overlay(capa_pdf, ctx))
     _append_pdf_bytes(w, capa_final)
 
-    # 2) ÍNDICE
     _append_pdf_file(w, TEMPLATES["INDICE"])
-
-    # 3) INTRODUÇÃO
     _append_pdf_file(w, TEMPLATES["INTRO"])
-
-    # 4) PLANEAMENTO EM BRANCO (template puro, sem alterar nada)
     _append_pdf_file(w, TEMPLATES["PLANEAMENTO"])
 
-    # 5) CERTIFICADO
     cert_pdf = TEMPLATES["CERTIFICADO"]
     cert_final = _overlay_on_template(cert_pdf, _draw_certificate_overlay(cert_pdf, ctx))
     _append_pdf_bytes(w, cert_final)
 
-    # 6) CONTRATO ORIGINAL
     contrato_pdf = TEMPLATES["CONTRATO_FRENTE"]
-    contrato_orig = _overlay_on_template(contrato_pdf, _draw_contract_overlay(contrato_pdf, ctx, "original"))
+
+    contrato_orig = _overlay_on_template(
+        contrato_pdf,
+        _draw_contract_overlay(contrato_pdf, ctx, "original"),
+    )
     _append_pdf_bytes(w, contrato_orig)
 
-    # 7) CONTRATO DUPLICADO
-    contrato_dup = _overlay_on_template(contrato_pdf, _draw_contract_overlay(contrato_pdf, ctx, "duplicado"))
+    contrato_dup = _overlay_on_template(
+        contrato_pdf,
+        _draw_contract_overlay(contrato_pdf, ctx, "duplicado"),
+    )
     _append_pdf_bytes(w, contrato_dup)
 
-    # 8) CONDIÇÕES
     _append_pdf_file(w, TEMPLATES["CONTRATO_CONDICOES"])
-
-    # 9) FICHAS TÉCNICAS E DE SEGURANÇA
     _append_common_annexes(w)
 
     out = BytesIO()

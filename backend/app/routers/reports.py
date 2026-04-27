@@ -29,10 +29,50 @@ from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT
 
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BASE_DIR / "uploads"
+
+# =========================================================
+# PDF Fonts - Unicode para acentos, ç, ã, õ, é, etc.
+# =========================================================
+
+FONT_REGULAR = "Helvetica"
+FONT_BOLD = "Helvetica-Bold"
+
+
+def _register_pdf_fonts():
+    global FONT_REGULAR, FONT_BOLD
+
+    candidates = [
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
+            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
+        ),
+        (
+            "/app/fonts/DejaVuSans.ttf",
+            "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+    ]
+
+    for regular, bold in candidates:
+        if Path(regular).exists() and Path(bold).exists():
+            pdfmetrics.registerFont(TTFont("AppFont", regular))
+            pdfmetrics.registerFont(TTFont("AppFont-Bold", bold))
+            FONT_REGULAR = "AppFont"
+            FONT_BOLD = "AppFont-Bold"
+            return
+
+
+_register_pdf_fonts()
 
 
 # =========================================================
@@ -264,7 +304,7 @@ _styles = getSampleStyleSheet()
 CELL = ParagraphStyle(
     "CELL",
     parent=_styles["Normal"],
-    fontName="Helvetica",
+    fontName=FONT_REGULAR,
     fontSize=8,
     leading=9.5,
     textColor=TEXT,
@@ -278,7 +318,7 @@ CELL = ParagraphStyle(
 CELL_BOLD = ParagraphStyle(
     "CELL_BOLD",
     parent=CELL,
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
 )
 
 CELL_RIGHT = ParagraphStyle(
@@ -297,13 +337,13 @@ CELL_SMALL = ParagraphStyle(
 CELL_SMALL_BOLD = ParagraphStyle(
     "CELL_SMALL_BOLD",
     parent=CELL_SMALL,
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
 )
 
 LABEL = ParagraphStyle(
     "LABEL",
     parent=CELL_SMALL,
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
     fontSize=7,
     leading=8,
     textColor=MUTED,
@@ -318,7 +358,7 @@ MUTED_TEXT = ParagraphStyle(
 AVI_DESC = ParagraphStyle(
     "AVI_DESC",
     parent=CELL_SMALL,
-    fontName="Helvetica",
+    fontName=FONT_REGULAR,
     fontSize=7.2,
     leading=8.2,
 )
@@ -340,10 +380,10 @@ def _draw_header_footer(
     left = margin
 
     c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 14)
     c.drawString(left, top, title)
 
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     info_y = top - 14
     line_h = 11
 
@@ -376,7 +416,7 @@ def _draw_header_footer(
     c.setStrokeColor(colors.HexColor("#D1D5DB"))
     c.line(margin, info_y - 4 * line_h - 3, page_w - margin, info_y - 4 * line_h - 3)
 
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     footer_y = 10 * mm
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     c.setFillColor(colors.HexColor("#6B7280"))
@@ -389,9 +429,9 @@ def _draw_table(c: canvas.Canvas, data, x, y, col_widths):
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
         ("FONTSIZE", (0, 1), (-1, -1), 7.5),
         ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#E5E7EB")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -428,9 +468,9 @@ def _draw_table_paginated(
     style = TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, 0), 8),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
         ("FONTSIZE", (0, 1), (-1, -1), 7.4),
         ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#E5E7EB")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -475,7 +515,7 @@ def _draw_table_paginated(
 
         c.showPage()
         _draw_header_footer(c, company=company, title=title, page_w=page_w, page_h=page_h)
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont(FONT_BOLD, 11)
         c.setFillColor(colors.HexColor("#111827"))
         c.drawString(margin, top_after_header, "Lista")
         first_page = False
@@ -493,7 +533,7 @@ def _draw_clean_footer(c: canvas.Canvas, *, page_w: float):
     c.setLineWidth(0.6)
     c.line(margin, footer_y + 4 * mm, page_w - margin, footer_y + 4 * mm)
 
-    c.setFont("Helvetica", 7.5)
+    c.setFont(FONT_REGULAR, 7.5)
     c.setFillColor(MUTED)
     c.drawString(margin, footer_y, f"Gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     c.drawRightString(page_w - margin, footer_y, f"Pág. {c.getPageNumber()}")
@@ -545,7 +585,7 @@ def _draw_avi_header(
     info_style = ParagraphStyle(
         "AVI_INFO_BODY",
         parent=CELL,
-        fontName="Helvetica",
+        fontName=FONT_REGULAR,
         fontSize=8,
         leading=10,
         textColor=TEXT,
@@ -590,15 +630,15 @@ def _draw_avi_header(
 
     doc_y = info_bottom - 6 * mm
 
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     c.setFillColor(TEXT)
     c.drawString(margin, doc_y, f"Encomendas  NE AVI.{document_number}")
 
-    c.setFont("Helvetica-Bold", 13)
+    c.setFont(FONT_BOLD, 13)
     c.drawString(margin, doc_y - 7 * mm, "Aviso de Cobrança")
 
     meta_top = doc_y - 18 * mm
-    c.setFont("Helvetica", 7.2)
+    c.setFont(FONT_REGULAR, 7.2)
     c.setFillColor(TEXT)
     c.drawString(margin, meta_top, "Data")
     c.drawString(60 * mm, meta_top, "Requisição")
@@ -609,7 +649,7 @@ def _draw_avi_header(
     c.drawString(191 * mm, meta_top, "Vencimento")
     c.drawString(222 * mm, meta_top, "Condição Pagamento")
 
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     c.drawString(margin, meta_top - 5 * mm, issue_date_label)
     c.drawString(85 * mm, meta_top - 5 * mm, "EUR")
     c.drawRightString(113 * mm, meta_top - 5 * mm, "1,00")
@@ -625,11 +665,11 @@ def _draw_avi_header(
 
 
 def _draw_intro_notice(c: canvas.Canvas, *, x: float, y: float):
-    c.setFont("Helvetica-Bold", 8)
+    c.setFont(FONT_BOLD, 8)
     c.setFillColor(ACCENT)
     c.drawString(x, y, "NOTA")
 
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     c.setFillColor(TEXT)
     c.drawString(
         x + 18 * mm,
@@ -643,10 +683,10 @@ def _build_main_table(table_data, colw):
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.white),
         ("TEXTCOLOR", (0, 0), (-1, 0), TEXT),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, 0), 7.6),
 
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
         ("FONTSIZE", (0, 1), (-1, -1), 7.4),
 
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -693,7 +733,7 @@ def _draw_summary_box(
     c.setFillColor(SOFT)
     c.roundRect(x, y - box_h, width, box_h, 3 * mm, stroke=0, fill=1)
 
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont(FONT_BOLD, 9)
     c.setFillColor(TEXT)
     c.drawString(x + 5 * mm, y - 6 * mm, "Resumo financeiro")
 
@@ -704,11 +744,11 @@ def _draw_summary_box(
             c.setLineWidth(0.45)
             c.line(x + 5 * mm, current_y + 2.2 * mm, x + width - 5 * mm, current_y + 2.2 * mm)
 
-        c.setFont("Helvetica", 8)
+        c.setFont(FONT_REGULAR, 8)
         c.setFillColor(MUTED)
         c.drawString(x + 5 * mm, current_y, label)
 
-        c.setFont("Helvetica-Bold" if label in {"Total", "IBAN"} else "Helvetica", 8.2)
+        c.setFont(FONT_BOLD if label in {"Total", "IBAN"} else FONT_REGULAR, 8.2)
         c.setFillColor(SUCCESS_DARK if label == "Total" else TEXT)
         c.drawRightString(x + width - 5 * mm, current_y, value)
 
@@ -725,14 +765,14 @@ def _draw_notes_block(
     width: float,
     company_iban: str,
 ):
-    c.setFont("Helvetica-Bold", 7.2)
+    c.setFont(FONT_BOLD, 7.2)
     c.setFillColor(MUTED)
     c.drawString(x, y, "OBSERVAÇÕES")
 
     text_style = ParagraphStyle(
         "NOTES_STYLE",
         parent=CELL_SMALL,
-        fontName="Helvetica",
+        fontName=FONT_REGULAR,
         fontSize=7.8,
         leading=9.2,
         textColor=TEXT,
@@ -824,12 +864,12 @@ def stock_pdf(
 
     y = page_h - margin - 55 * mm
 
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Lista de Itens")
     y -= 7 * mm
 
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.drawString(margin, y, f"Total itens: {len(items)}")
     y -= 5 * mm
     c.drawString(margin, y, f"Valor estimado em stock (médio): {_eur(total_value)}")
@@ -885,7 +925,7 @@ def stock_pdf(
     _draw_header_footer(c, company=company, title="Lista de Compras (Stock)", page_w=page_w, page_h=page_h)
     y = page_h - margin - 55 * mm
 
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Itens a repor")
     y -= 8 * mm
@@ -977,7 +1017,7 @@ def clients_pdf(
     _draw_header_footer(c, company=company, title=title, page_w=page_w, page_h=page_h)
 
     y = page_h - margin - 55 * mm
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Lista")
     y -= 8 * mm
@@ -1073,7 +1113,7 @@ def expenses_pdf(
     )
 
     y = page_h - margin - 55 * mm
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, f"Total: {_eur(total)}")
     y -= 8 * mm
@@ -1281,7 +1321,7 @@ def pending_invoices_pdf(
 
     y = page_h - margin - 55 * mm
 
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.setFillColor(colors.HexColor("#111827"))
 
     period_label = "Todos os períodos"
@@ -1345,7 +1385,7 @@ def pending_invoices_pdf(
     _draw_header_footer(c, company=company, title=title, page_w=page_w, page_h=page_h)
 
     y2 = page_h - margin - 55 * mm
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y2, "Resumo")
     y2 -= 10 * mm

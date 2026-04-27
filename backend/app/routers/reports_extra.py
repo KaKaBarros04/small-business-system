@@ -1,9 +1,10 @@
-# app/routers/reports.py
+# app/routers/reports_extra.py
 from __future__ import annotations
 
 from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
+import io
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
@@ -17,9 +18,6 @@ from app.models.client import Client
 from app.models.expense import Expense
 from app.models.stock_item import StockItem
 
-import io
-
-# reportlab
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib import colors
@@ -27,14 +25,52 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-BASE_DIR = Path(__file__).resolve().parents[2]  # backend/
+BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BASE_DIR / "uploads"
 
+FONT_REGULAR = "Helvetica"
+FONT_BOLD = "Helvetica-Bold"
 
-# ---------- helpers ----------
+
+def _register_pdf_fonts():
+    global FONT_REGULAR, FONT_BOLD
+
+    candidates = [
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
+            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
+        ),
+        (
+            "/app/fonts/DejaVuSans.ttf",
+            "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
+        ),
+    ]
+
+    for regular, bold in candidates:
+        if Path(regular).exists() and Path(bold).exists():
+            pdfmetrics.registerFont(TTFont("AppFont", regular))
+            pdfmetrics.registerFont(TTFont("AppFont-Bold", bold))
+            FONT_REGULAR = "AppFont"
+            FONT_BOLD = "AppFont-Bold"
+            return
+
+
+_register_pdf_fonts()
+
+
 def _eur(v) -> str:
     try:
         x = float(v or 0)
@@ -67,13 +103,12 @@ def _as_number(x) -> float:
         return 0.0
 
 
-# ---------- reportlab paragraph styles (globais!) ----------
 _styles = getSampleStyleSheet()
 
 CELL = ParagraphStyle(
     "CELL",
     parent=_styles["Normal"],
-    fontName="Helvetica",
+    fontName=FONT_REGULAR,
     fontSize=9,
     leading=11,
     spaceBefore=0,
@@ -84,7 +119,7 @@ CELL = ParagraphStyle(
 CELL_BOLD = ParagraphStyle(
     "CELL_BOLD",
     parent=CELL,
-    fontName="Helvetica-Bold",
+    fontName=FONT_BOLD,
 )
 
 CELL_RIGHT = ParagraphStyle(
@@ -106,22 +141,21 @@ def _draw_header_footer(
     top = page_h - margin
     left = margin
 
-    # título
     c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont(FONT_BOLD, 14)
     c.drawString(left, top, title)
 
-    # bloco empresa
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     info_y = top - 14
     line_h = 11
 
-    # logo (optional)
     if company and company.logo_path:
         logo_path = company.logo_path or ""
         if logo_path.startswith("/"):
             logo_path = logo_path.lstrip("/")
+
         p = BASE_DIR / logo_path
+
         if not p.exists():
             p2 = UPLOADS_DIR / Path(logo_path).name
             if p2.exists():
@@ -149,15 +183,14 @@ def _draw_header_footer(
         f"Morada: {_safe_str(getattr(company, 'address', None))}",
         f"Telefone: {_safe_str(getattr(company, 'phone', None))}   Email: {_safe_str(getattr(company, 'email', None))}",
     ]
+
     for i, ln in enumerate(lines):
         c.drawString(left, info_y - i * line_h, ln)
 
-    # linha separadora
     c.setStrokeColor(colors.HexColor("#D1D5DB"))
     c.line(margin, info_y - 4 * line_h - 3, page_w - margin, info_y - 4 * line_h - 3)
 
-    # footer
-    c.setFont("Helvetica", 8)
+    c.setFont(FONT_REGULAR, 8)
     footer_y = 10 * mm
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     c.setFillColor(colors.HexColor("#6B7280"))
@@ -168,11 +201,11 @@ def _draw_header_footer(
 def _draw_table(c: canvas.Canvas, data, x, y, col_widths):
     t = Table(data, colWidths=col_widths)
     t.setStyle(TableStyle([
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 9),
+        ("FONT", (0, 0), (-1, 0), FONT_BOLD, 9),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F3F4F6")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#111827")),
 
-        ("FONT", (0, 1), (-1, -1), "Helvetica", 9),
+        ("FONT", (0, 1), (-1, -1), FONT_REGULAR, 9),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E5E7EB")),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAFAFA")]),
@@ -181,6 +214,7 @@ def _draw_table(c: canvas.Canvas, data, x, y, col_widths):
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
     ]))
+
     w, h = t.wrapOn(c, 0, 0)
     t.drawOn(c, x, y - h)
     return h
@@ -190,10 +224,6 @@ def _get_company(db: Session, company_id: int) -> Company:
     return db.query(Company).filter(Company.id == company_id).first()
 
 
-# ============================================================
-# 2) PDF Stock
-# GET /reports/stock.pdf?only_restock=true&threshold=5&q=veneno
-# ============================================================
 @router.get("/stock.pdf")
 def stock_pdf(
     only_restock: bool = Query(False),
@@ -230,7 +260,8 @@ def stock_pdf(
         qty = _as_number(it.qty_on_hand)
         minq = _as_number(it.min_qty)
 
-        lack = max(0.0, (float(threshold) if threshold is not None else minq) - qty)
+        target = float(threshold) if threshold is not None else minq
+        lack = max(0.0, target - qty)
         suggest = lack
 
         last_cost = _as_number(it.last_purchase_unit_cost) if it.last_purchase_unit_cost is not None else None
@@ -243,16 +274,14 @@ def stock_pdf(
             _safe_str(it.sku),
             _safe_str(it.unit),
             f"{qty:.3f}".rstrip("0").rstrip("."),
-            f"{(float(threshold) if threshold is not None else minq):.3f}".rstrip("0").rstrip("."),
+            f"{target:.3f}".rstrip("0").rstrip("."),
             f"{lack:.3f}".rstrip("0").rstrip("."),
             f"{suggest:.3f}".rstrip("0").rstrip("."),
             _eur(unit_cost),
             _eur(est),
         ])
 
-    total_value = 0.0
-    for it in items:
-        total_value += _as_number(it.qty_on_hand) * _as_number(it.avg_unit_cost)
+    total_value = sum(_as_number(it.qty_on_hand) * _as_number(it.avg_unit_cost) for it in items)
 
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -262,7 +291,7 @@ def stock_pdf(
     _draw_header_footer(c, company=company, title="Relatório de Stock", page_w=page_w, page_h=page_h)
 
     y = page_h - margin - 55 * mm
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Lista de Itens")
     y -= 8 * mm
@@ -271,24 +300,23 @@ def stock_pdf(
         "Produto", "SKU", "Un", "Stock", "Mín", "Falta", "Comprar", "Custo (un)", "Estimado"
     ]] + (rows if rows else [["Sem itens", "", "", "", "", "", "", "", ""]])
 
-    col_widths = [64*mm, 28*mm, 10*mm, 16*mm, 16*mm, 16*mm, 18*mm, 20*mm, 22*mm]
+    col_widths = [64 * mm, 28 * mm, 10 * mm, 16 * mm, 16 * mm, 16 * mm, 18 * mm, 20 * mm, 22 * mm]
     used_h = _draw_table(c, table_data, margin, y, col_widths)
-    y -= (used_h + 8*mm)
+    y -= used_h + 8 * mm
 
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, f"Total itens: {len(items)}")
-    y -= 5*mm
+    y -= 5 * mm
     c.drawString(margin, y, f"Valor estimado em stock (médio): {_eur(total_value)}")
 
-    # segunda página: lista de compras
     c.showPage()
     _draw_header_footer(c, company=company, title="Lista de Compras (Stock)", page_w=page_w, page_h=page_h)
     y = page_h - margin - 55 * mm
 
     restock_rows = rows if only_restock else [r for r, it in zip(rows, items) if needs_restock(it)]
 
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Itens a repor")
     y -= 8 * mm
@@ -297,7 +325,8 @@ def stock_pdf(
         [[r[0], r[1], r[2], r[3], r[4], r[6]] for r in restock_rows]
         if restock_rows else [["Nenhum item precisa reposição", "", "", "", "", ""]]
     )
-    buy_colw = [88*mm, 34*mm, 10*mm, 22*mm, 22*mm, 22*mm]
+
+    buy_colw = [88 * mm, 34 * mm, 10 * mm, 22 * mm, 22 * mm, 22 * mm]
     _draw_table(c, buy_table, margin, y, buy_colw)
 
     c.save()
@@ -310,10 +339,6 @@ def stock_pdf(
     )
 
 
-# ============================================================
-# 3) PDF Clientes
-# GET /reports/clients.pdf?contract_only=true
-# ============================================================
 @router.get("/clients.pdf")
 def clients_pdf(
     contract_only: bool = Query(False),
@@ -323,6 +348,7 @@ def clients_pdf(
     company = _get_company(db, current_user.company_id)
 
     qry = db.query(Client).filter(Client.company_id == current_user.company_id).order_by(Client.id.asc())
+
     if contract_only:
         qry = qry.filter(Client.has_contract == True)  # noqa: E712
 
@@ -350,7 +376,7 @@ def clients_pdf(
     _draw_header_footer(c, company=company, title=title, page_w=page_w, page_h=page_h)
 
     y = page_h - margin - 55 * mm
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont(FONT_BOLD, 11)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, "Lista")
     y -= 8 * mm
@@ -359,11 +385,12 @@ def clients_pdf(
         "ID", "Cliente", "NIF", "Localidade", "Telefone", "Início contrato", "Visitas/ano", "Estado"
     ]] + (rows if rows else [["Sem clientes", "", "", "", "", "", "", ""]])
 
-    colw = [12*mm, 52*mm, 22*mm, 30*mm, 26*mm, 24*mm, 18*mm, 18*mm]
+    colw = [12 * mm, 52 * mm, 22 * mm, 30 * mm, 26 * mm, 24 * mm, 18 * mm, 18 * mm]
     _draw_table(c, table, margin, y, colw)
 
     c.save()
     buf.seek(0)
+
     return StreamingResponse(
         buf,
         media_type="application/pdf",
@@ -371,11 +398,6 @@ def clients_pdf(
     )
 
 
-# ============================================================
-# 4) PDF Despesas (por período)
-# GET /reports/expenses.pdf?year=2026&month=2
-# month=0 => ano todo
-# ============================================================
 @router.get("/expenses.pdf")
 def expenses_pdf(
     year: int = Query(..., ge=1900, le=3000),
@@ -401,6 +423,7 @@ def expenses_pdf(
 
     total = 0.0
     rows = []
+
     for e in expenses:
         total += _as_number(e.amount)
         rows.append([
@@ -424,7 +447,7 @@ def expenses_pdf(
     )
 
     y = page_h - margin - 55 * mm
-    c.setFont("Helvetica", 9)
+    c.setFont(FONT_REGULAR, 9)
     c.setFillColor(colors.HexColor("#111827"))
     c.drawString(margin, y, f"Total: {_eur(total)}")
     y -= 8 * mm
