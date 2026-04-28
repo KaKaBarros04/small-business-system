@@ -25,16 +25,28 @@ def _register_pdf_fonts():
 
     candidates = [
         (
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ),
-        (
             str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
             str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
         ),
         (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        ),
+        (
             "/app/fonts/DejaVuSans.ttf",
             "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
         ),
     ]
 
@@ -69,8 +81,6 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
     w_addr = 78 * mm
 
     x_date = x_addr + w_addr
-    w_date = W - margin_x - x_date
-
     x_right = W - margin_x
 
     y = H - margin_top
