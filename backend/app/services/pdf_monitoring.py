@@ -30,16 +30,28 @@ def _register_pdf_fonts():
 
     candidates = [
         (
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ),
-        (
             str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
             str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
         ),
         (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        ),
+        (
             "/app/fonts/DejaVuSans.ttf",
             "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
         ),
     ]
 
@@ -55,8 +67,59 @@ def _register_pdf_fonts():
 _register_pdf_fonts()
 
 
+def _fix_mojibake(value) -> str:
+    if value is None:
+        return ""
+
+    text = str(value)
+
+    repl = {
+        "├º": "ç",
+        "├ú": "ã",
+        "├í": "á",
+        "├®": "é",
+        "├¡": "í",
+        "├│": "ó",
+        "├║": "ú",
+        "├á": "à",
+        "├ó": "â",
+        "├¬": "ê",
+        "├┤": "ô",
+        "┬º": "º",
+        "┬ª": "ª",
+        "Âº": "º",
+        "Âª": "ª",
+        "Ã§": "ç",
+        "Ã£": "ã",
+        "Ã¡": "á",
+        "Ã©": "é",
+        "Ã­": "í",
+        "Ã³": "ó",
+        "Ãº": "ú",
+        "Ãµ": "õ",
+        "Ãª": "ê",
+        "Ã¢": "â",
+        "Ã ": "à",
+    }
+
+    for bad, good in repl.items():
+        text = text.replace(bad, good)
+
+    if any(m in text for m in ("Ã", "Â")):
+        for enc in ("latin1", "cp1252"):
+            try:
+                fixed = text.encode(enc).decode("utf-8")
+                if fixed and fixed != text:
+                    text = fixed
+                    break
+            except Exception:
+                pass
+
+    return text.strip()
+
+
 def _safe(x, fallback="—"):
-    s = str(x).strip() if x is not None else ""
+    s = _fix_mojibake(x)
     return s if s else fallback
 
 
@@ -86,7 +149,7 @@ def _draw_company_header(c: canvas.Canvas, company: Company, title: str, page_w:
 
     c.setFont(FONT_BOLD, 14)
     c.setFillColor(colors.black)
-    c.drawString(margin, top, title)
+    c.drawString(margin, top, _safe(title, ""))
 
     c.setFont(FONT_REGULAR, 9)
     info_y = top - 14
@@ -209,8 +272,38 @@ def _draw_legend(c: canvas.Canvas, x: float, y: float):
         _draw_marker(c, x + 8, y + 4, 0, device_type)
         c.setFillColor(colors.black)
         c.setFont(FONT_REGULAR, 8)
-        c.drawString(x + 20, y, label)
+        c.drawString(x + 20, y, _safe(label, ""))
         y -= 16
+
+
+def _draw_results_header(c: canvas.Canvas, *, table_x: float, table_y: float, page_w: float, margin: float, title: str):
+    c.setFont(FONT_BOLD, 9)
+    c.setFillColor(colors.black)
+    c.drawString(table_x, table_y, _safe(title, "Resultados dos pontos"))
+    table_y -= 12
+
+    headers = ["Ponto", "Tipo", "Estado", "Consumo%", "Ação", "Notas"]
+    col_x = [
+        table_x,
+        table_x + 14 * mm,
+        table_x + 50 * mm,
+        table_x + 72 * mm,
+        table_x + 95 * mm,
+        table_x + 126 * mm,
+    ]
+
+    c.setFont(FONT_BOLD, 8)
+    for i, h in enumerate(headers):
+        c.drawString(col_x[i], table_y, h)
+
+    table_y -= 6
+    c.setStrokeColor(colors.HexColor("#2563EB"))
+    c.line(table_x, table_y, page_w - margin, table_y)
+    c.setStrokeColor(colors.black)
+    table_y -= 10
+
+    c.setFont(FONT_REGULAR, 8)
+    return table_y, col_x
 
 
 def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -> bytes:
@@ -219,7 +312,7 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
     page_w, page_h = A4
     margin = 14 * mm
 
-    _draw_company_header(c, company, f"Mapa técnico — {site_map.name}", page_w, page_h)
+    _draw_company_header(c, company, f"Mapa técnico — {_safe(site_map.name, '')}", page_w, page_h)
 
     info_y = page_h - margin - 58 * mm
     c.setFont(FONT_BOLD, 10)
@@ -236,7 +329,7 @@ def build_site_map_pdf(*, company: Company, client: Client, site_map: SiteMap) -
     info_y -= 11
 
     morada = " ".join([
-        x for x in [
+        _safe(x, "") for x in [
             getattr(client, "address", None),
             getattr(client, "postal_code", None),
             getattr(client, "city", None),
@@ -311,36 +404,44 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
     c = canvas.Canvas(buf, pagesize=A4)
     page_w, page_h = A4
     margin = 14 * mm
+    bottom_limit = 18 * mm
 
     results_by_point_id = {r.site_map_point_id: r for r in visit.results}
 
-    _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
+    def draw_visit_header():
+        _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
 
-    y = page_h - margin - 58 * mm
-    c.setFont(FONT_BOLD, 10)
-    c.drawString(margin, y, "Dados da visita")
-    y -= 12
+        yy = page_h - margin - 58 * mm
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(colors.black)
+        c.drawString(margin, yy, "Dados da visita")
+        yy -= 12
 
-    lines = [
-        f"Cliente: {_safe(getattr(client, 'business_name', None) or getattr(client, 'name', None))}",
-        f"Código: {_safe(getattr(client, 'client_code', None), str(client.id))}",
-        f"Data: {visit.visit_date.strftime('%d/%m/%Y %H:%M') if visit.visit_date else '—'}",
-        f"Praga: {_safe(visit.pest_type or getattr(client, 'pest_type', None))}",
-    ]
+        lines = [
+            f"Cliente: {_safe(getattr(client, 'business_name', None) or getattr(client, 'name', None))}",
+            f"Código: {_safe(getattr(client, 'client_code', None), str(client.id))}",
+            f"Data: {visit.visit_date.strftime('%d/%m/%Y %H:%M') if visit.visit_date else '—'}",
+            f"Praga: {_safe(visit.pest_type or getattr(client, 'pest_type', None))}",
+        ]
 
-    c.setFont(FONT_REGULAR, 9)
-    for ln in lines:
-        c.drawString(margin, y, ln)
-        y -= 10
+        c.setFont(FONT_REGULAR, 9)
+        for ln in lines:
+            c.drawString(margin, yy, ln)
+            yy -= 10
+
+        return yy
+
+    y = draw_visit_header()
 
     for idx, site_map in enumerate(site_maps):
         if idx > 0:
+            _draw_footer(c, page_w)
             c.showPage()
-            _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
-            y = page_h - margin - 58 * mm
+            y = draw_visit_header()
 
         c.setFont(FONT_BOLD, 10)
-        c.drawString(margin, y, f"Mapa: {site_map.name}")
+        c.setFillColor(colors.black)
+        c.drawString(margin, y, f"Mapa: {_safe(site_map.name, '')}")
         y -= 8
 
         map_x = margin
@@ -393,34 +494,37 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         table_x = margin
         table_y = 56 * mm
 
-        c.setFont(FONT_BOLD, 9)
-        c.drawString(table_x, table_y, "Resultados dos pontos")
-        table_y -= 12
+        table_y, col_x = _draw_results_header(
+            c,
+            table_x=table_x,
+            table_y=table_y,
+            page_w=page_w,
+            margin=margin,
+            title="Resultados dos pontos",
+        )
 
-        headers = ["Ponto", "Tipo", "Estado", "Consumo%", "Ação", "Notas"]
-        col_x = [
-            table_x,
-            table_x + 14 * mm,
-            table_x + 50 * mm,
-            table_x + 72 * mm,
-            table_x + 95 * mm,
-            table_x + 126 * mm,
-        ]
-
-        c.setFont(FONT_BOLD, 8)
-        for i, h in enumerate(headers):
-            c.drawString(col_x[i], table_y, h)
-
-        table_y -= 6
-        c.line(table_x, table_y, page_w - margin, table_y)
-        table_y -= 10
-
-        c.setFont(FONT_REGULAR, 8)
         for p in site_map.points:
+            if table_y < bottom_limit:
+                _draw_footer(c, page_w)
+                c.showPage()
+                _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
+
+                table_y = page_h - margin - 45 * mm
+                table_y, col_x = _draw_results_header(
+                    c,
+                    table_x=table_x,
+                    table_y=table_y,
+                    page_w=page_w,
+                    margin=margin,
+                    title=f"Resultados dos pontos — {_safe(site_map.name, '')}",
+                )
+
             r = results_by_point_id.get(p.id)
 
+            c.setFont(FONT_REGULAR, 8)
+            c.setFillColor(colors.black)
             c.drawString(col_x[0], table_y, str(p.point_number))
-            c.drawString(col_x[1], table_y, _device_label(p.device_type)[:22])
+            c.drawString(col_x[1], table_y, _safe(_device_label(p.device_type), "")[:22])
             c.drawString(col_x[2], table_y, _safe(getattr(r, "status_code", None), "—"))
 
             cons = getattr(r, "consumption_percent", None)
@@ -430,10 +534,14 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
 
             table_y -= 10
 
-            if table_y < 22 * mm:
-                break
+        if table_y < 30 * mm:
+            _draw_footer(c, page_w)
+            c.showPage()
+            _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
+            table_y = page_h - margin - 45 * mm
 
         c.setFont(FONT_BOLD, 9)
+        c.setFillColor(colors.black)
         c.drawString(margin, 18 * mm, "Observações gerais:")
 
         c.setFont(FONT_REGULAR, 9)
@@ -442,6 +550,7 @@ def build_monitoring_visit_pdf(*, company: Company, client: Client, visit: Monit
         _draw_footer(c, page_w)
 
     if not site_maps:
+        _draw_company_header(c, company, "Relatório de monitorização", page_w, page_h)
         c.setFont(FONT_REGULAR, 10)
         c.drawString(margin, 100 * mm, "Não existem mapas cadastrados para este cliente.")
         _draw_footer(c, page_w)

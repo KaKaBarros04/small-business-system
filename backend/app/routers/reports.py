@@ -50,16 +50,28 @@ def _register_pdf_fonts():
 
     candidates = [
         (
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ),
-        (
             str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
             str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
         ),
         (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        ),
+        (
             "/app/fonts/DejaVuSans.ttf",
             "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
         ),
     ]
 
@@ -70,9 +82,6 @@ def _register_pdf_fonts():
             FONT_REGULAR = "AppFont"
             FONT_BOLD = "AppFont-Bold"
             return
-
-
-_register_pdf_fonts()
 
 
 # =========================================================
