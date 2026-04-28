@@ -24,30 +24,12 @@ def _register_pdf_fonts():
     global FONT_REGULAR, FONT_BOLD
 
     candidates = [
-        (
-            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
-            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
-        ),
-        (
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        ),
-        (
-            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
-            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
-        ),
-        (
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        ),
-        (
-            "/app/fonts/DejaVuSans.ttf",
-            "/app/fonts/DejaVuSans-Bold.ttf",
-        ),
-        (
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/arialbd.ttf",
-        ),
+        (str(BASE_DIR / "fonts" / "DejaVuSans.ttf"), str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf")),
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
+        ("/app/fonts/DejaVuSans.ttf", "/app/fonts/DejaVuSans-Bold.ttf"),
+        ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
     ]
 
     for regular, bold in candidates:
@@ -60,6 +42,61 @@ def _register_pdf_fonts():
 
 
 _register_pdf_fonts()
+
+
+def fix_mojibake(value) -> str:
+    if value is None:
+        return ""
+
+    text = str(value)
+
+    repl = {
+        "├º": "ç",
+        "├ú": "ã",
+        "├í": "á",
+        "├®": "é",
+        "├¡": "í",
+        "├│": "ó",
+        "├║": "ú",
+        "├á": "à",
+        "├ó": "â",
+        "├¬": "ê",
+        "├┤": "ô",
+        "├Á": "Á",
+        "├Ç": "Ç",
+        "├É": "É",
+        "├Õ": "Õ",
+        "┬º": "º",
+        "┬ª": "ª",
+        "Âº": "º",
+        "Âª": "ª",
+        "Ã§": "ç",
+        "Ã£": "ã",
+        "Ã¡": "á",
+        "Ã©": "é",
+        "Ã­": "í",
+        "Ã³": "ó",
+        "Ãº": "ú",
+        "Ãµ": "õ",
+        "Ãª": "ê",
+        "Ã¢": "â",
+        "Ã ": "à",
+    }
+
+    for bad, good in repl.items():
+        text = text.replace(bad, good)
+
+    if any(m in text for m in ("Ã", "Â")):
+        for enc in ("latin1", "cp1252"):
+            try:
+                fixed = text.encode(enc).decode("utf-8")
+                if fixed and fixed != text:
+                    text = fixed
+                    break
+            except Exception:
+                pass
+
+    return text.strip()
 
 
 def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: datetime) -> bytes:
@@ -86,33 +123,10 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
     y = H - margin_top
     page_no = 1
 
-    def fix_mojibake(s: str) -> str:
-        if not s:
-            return ""
-
-        markers = ("Ã", "Â", "├", "┬")
-        if not any(m in s for m in markers):
-            return s
-
-        attempts = []
-
-        for enc in ("latin1", "cp1252"):
-            try:
-                attempts.append(s.encode(enc).decode("utf-8"))
-            except Exception:
-                pass
-
-        for a in attempts:
-            if a and a != s and not any(m in a for m in ("├", "┬", "Ã", "Â")):
-                return a
-
-        return attempts[0] if attempts else s
-
     def safe(s) -> str:
-        raw = "" if s is None else str(s)
-        return fix_mojibake(raw).strip()
+        return fix_mojibake(s)
 
-    def dash(s: str) -> str:
+    def dash(s) -> str:
         s = safe(s)
         return s if s else "—"
 
@@ -143,27 +157,27 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
         return (t[:cut].rstrip() + ell) if cut > 0 else ell
 
     def parse_service_from_notes(notes: str) -> dict:
+        notes = safe(notes)
         if not notes:
             return {}
 
         out = {}
 
-        for raw in str(notes).splitlines():
+        for raw in notes.splitlines():
             line = raw.strip()
             upper = line.upper()
 
             if upper.startswith("SERVICE_ADDR:"):
-                out["service_address"] = line.split(":", 1)[1].strip()
+                out["service_address"] = safe(line.split(":", 1)[1])
             elif upper.startswith("SERVICE_PC:"):
-                out["service_postal_code"] = line.split(":", 1)[1].strip()
+                out["service_postal_code"] = safe(line.split(":", 1)[1])
             elif upper.startswith("SERVICE_CITY:"):
-                out["service_city"] = line.split(":", 1)[1].strip()
+                out["service_city"] = safe(line.split(":", 1)[1])
 
         return {k: v for k, v in out.items() if v}
 
     def pick_service_address(row: dict) -> tuple[str, str, str]:
-        notes = safe(row.get("notes"))
-        tagged = parse_service_from_notes(notes)
+        tagged = parse_service_from_notes(row.get("notes"))
 
         addr = (
             safe(row.get("service_address"))
@@ -237,12 +251,7 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
         c.setFillColor(colors.black)
 
         c.setFont(FONT_BOLD, 14)
-        company_name = fit_text(
-            company_name_raw.upper(),
-            max_width=135 * mm,
-            font=FONT_BOLD,
-            size=14,
-        )
+        company_name = fit_text(company_name_raw.upper(), max_width=135 * mm, font=FONT_BOLD, size=14)
         c.drawCentredString(W / 2, y, company_name)
         y -= 6 * mm
 
@@ -325,33 +334,18 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
         c.drawString(x_num + 1.5 * mm, y, client_code[:12])
 
         c.setFont(FONT_BOLD, 9)
-        client_name = fit_text(
-            client_name_raw,
-            max_width=w_name - 3 * mm,
-            font=FONT_BOLD,
-            size=9,
-        )
+        client_name = fit_text(client_name_raw, max_width=w_name - 3 * mm, font=FONT_BOLD, size=9)
         c.drawString(x_name + 1.5 * mm, y, client_name)
 
         c.setFont(FONT_REGULAR, 9)
-        addr1 = fit_text(
-            addr,
-            max_width=w_addr - 3 * mm,
-            font=FONT_REGULAR,
-            size=9,
-        )
+        addr1 = fit_text(addr, max_width=w_addr - 3 * mm, font=FONT_REGULAR, size=9)
         c.drawString(x_addr + 1.5 * mm, y, addr1)
 
         addr2 = " ".join([x for x in [postal, city] if x]).strip()
 
         if addr2:
             c.setFont(FONT_REGULAR, 8)
-            addr2_fit = fit_text(
-                addr2,
-                max_width=w_addr - 3 * mm,
-                font=FONT_REGULAR,
-                size=8,
-            )
+            addr2_fit = fit_text(addr2, max_width=w_addr - 3 * mm, font=FONT_REGULAR, size=8)
             c.drawString(x_addr + 1.5 * mm, y - line_gap, addr2_fit)
 
         c.setFont(FONT_REGULAR, 9)

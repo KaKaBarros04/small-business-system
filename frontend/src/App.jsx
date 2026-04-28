@@ -73,8 +73,9 @@ function RequireAdmin({ children }) {
 /** Protege módulo só para Desinfex */
 function RequireDesinfex({ children }) {
   const { companySlug } = useParams();
+  const slug = (companySlug || "").toLowerCase();
 
-  if ((companySlug || "").toLowerCase() !== "desinfex") {
+  if (!["desinfex", "empresa-a"].includes(slug)) {
     return <Navigate to={`/${companySlug}/app/dashboard`} replace />;
   }
 
@@ -143,7 +144,8 @@ function ThemeSwitch({ theme, setTheme }) {
 function CompanySidebar({ companySlug, user, staffPermissions }) {
   const role = (user?.role || "").toUpperCase();
   const isAdmin = role === "ADMIN";
-  const isDesinfex = (companySlug || "").toLowerCase() === "desinfex";
+  const slug = (companySlug || "").toLowerCase();
+  const isDesinfex = ["desinfex", "empresa-a"].includes(slug);
 
   const can = (module, action) => {
     if (isAdmin) return true;
