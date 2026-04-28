@@ -64,6 +64,63 @@ def _register_pdf_fonts():
 _register_pdf_fonts()
 
 
+def _fix_mojibake(value) -> str:
+    if value is None:
+        return ""
+
+    text = str(value)
+
+    repl = {
+        "├º": "ç",
+        "├ú": "ã",
+        "├í": "á",
+        "├®": "é",
+        "├¡": "í",
+        "├│": "ó",
+        "├║": "ú",
+        "├á": "à",
+        "├ó": "â",
+        "├¬": "ê",
+        "├┤": "ô",
+        "├Á": "Á",
+        "├Ç": "Ç",
+        "├É": "É",
+        "├Õ": "Õ",
+        "┬º": "º",
+        "┬ª": "ª",
+        "Âº": "º",
+        "Âª": "ª",
+        "Ã§": "ç",
+        "Ã£": "ã",
+        "Ã¡": "á",
+        "Ã©": "é",
+        "Ã­": "í",
+        "Ã³": "ó",
+        "Ãº": "ú",
+        "Ãµ": "õ",
+        "Ãª": "ê",
+        "Ã¢": "â",
+        "Ã": "à",
+    };
+
+    # corrige casos comuns gravados como mojibake
+    for bad, good in repl.items():
+        text = text.replace(bad, good)
+
+    # tentativa genérica para textos tipo Ã£ / Âº
+    if any(m in text for m in ("Ã", "Â")):
+        for enc in ("latin1", "cp1252"):
+            try:
+                fixed = text.encode(enc).decode("utf-8")
+                if fixed and fixed != text:
+                    text = fixed
+                    break
+            except Exception:
+                pass
+
+    return text.strip()
+
+
 COORDS = {
     "cover": {
         "client_no": (62, 137),
@@ -178,6 +235,7 @@ def _fit_text_lines(
     font=FONT_REGULAR,
     size=11,
 ) -> List[str]:
+    text = _fix_mojibake(text)
     if not text:
         return []
 
@@ -227,6 +285,7 @@ def _draw_fitted_text(
     size=11,
     leading=12,
 ) -> float:
+    text = _fix_mojibake(text)
     lines = _fit_text_lines(
         text=text,
         max_lines=max_lines,
@@ -295,6 +354,7 @@ def _append_common_annexes(writer: PdfWriter):
 
 
 def _parse_service_from_notes(notes: str) -> Dict[str, str]:
+    notes = _fix_mojibake(notes)
     if not notes:
         return {}
 
@@ -305,11 +365,11 @@ def _parse_service_from_notes(notes: str) -> Dict[str, str]:
         u = line.upper()
 
         if u.startswith("SERVICE_ADDR:"):
-            out["service_address"] = line.split(":", 1)[1].strip()
+            out["service_address"] = _fix_mojibake(line.split(":", 1)[1].strip())
         elif u.startswith("SERVICE_PC:"):
-            out["service_postal_code"] = line.split(":", 1)[1].strip()
+            out["service_postal_code"] = _fix_mojibake(line.split(":", 1)[1].strip())
         elif u.startswith("SERVICE_CITY:"):
-            out["service_city"] = line.split(":", 1)[1].strip()
+            out["service_city"] = _fix_mojibake(line.split(":", 1)[1].strip())
 
     return {k: v for k, v in out.items() if v}
 
@@ -329,11 +389,11 @@ def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
         c.setFont(font, fsize)
 
         x, y = cfg["client_no"]
-        c.drawString(x * mm, y * mm, str(ctx.get("client_number") or ""))
+        c.drawString(x * mm, y * mm, _fix_mojibake(ctx.get("client_number") or ""))
 
         x, y = cfg["name"]
-        fantasy = str(ctx.get("client_fantasy") or "").strip()
-        legal = str(ctx.get("client_legal") or "").strip()
+        fantasy = _fix_mojibake(ctx.get("client_fantasy") or "")
+        legal = _fix_mojibake(ctx.get("client_legal") or "")
 
         maxw = 135 * mm
         start_y = y * mm
@@ -356,8 +416,10 @@ def _draw_cover_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
                 font=FONT_BOLD, size=fsize, leading=10,
             )
 
-        addr1 = str(ctx.get("service_address") or ctx.get("fiscal_address") or "").strip()
-        addr2 = f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        addr1 = _fix_mojibake(ctx.get("service_address") or ctx.get("fiscal_address") or "")
+        addr2 = _fix_mojibake(
+            f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        )
 
         x, y = cfg["addr1"]
         _draw_fitted_text(
@@ -392,8 +454,8 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
         c.setFillColor(colors.black)
 
         x, y = cfg["name"]
-        fantasy = str(ctx.get("client_fantasy") or "").strip()
-        legal = str(ctx.get("client_legal") or "").strip()
+        fantasy = _fix_mojibake(ctx.get("client_fantasy") or "")
+        legal = _fix_mojibake(ctx.get("client_legal") or "")
 
         maxw = 110 * mm
         start_y = y * mm
@@ -418,10 +480,12 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
 
         x, y = cfg["nif"]
         c.setFont(font, fsize)
-        c.drawString(x * mm, y * mm, f"NIF : {ctx.get('vat_number') or ''}")
+        c.drawString(x * mm, y * mm, f"NIF : {_fix_mojibake(ctx.get('vat_number') or '')}")
 
-        addr1 = str(ctx.get("service_address") or ctx.get("fiscal_address") or "").strip()
-        addr2 = f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        addr1 = _fix_mojibake(ctx.get("service_address") or ctx.get("fiscal_address") or "")
+        addr2 = _fix_mojibake(
+            f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        )
 
         x, y = cfg["addr1"]
         _draw_fitted_text(
@@ -438,7 +502,7 @@ def _draw_certificate_overlay(template_pdf: Path, ctx: Dict[str, Any]) -> bytes:
         )
 
         x, y = cfg["date"]
-        c.drawString(x * mm, y * mm, str(ctx.get("today_pt") or ""))
+        c.drawString(x * mm, y * mm, _fix_mojibake(ctx.get("today_pt") or ""))
 
     return _make_overlay_for_template(template_pdf, draw)
 
@@ -454,15 +518,15 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
         c.setFillColor(colors.black)
         c.setFont(FONT_REGULAR, 10)
 
-        c.drawString(cfg["left"]["nif"][0] * mm, cfg["left"]["nif"][1] * mm, str(ctx.get("vat_number") or ""))
-        c.drawString(cfg["left"]["phone"][0] * mm, cfg["left"]["phone"][1] * mm, str(ctx.get("phone") or ""))
-        c.drawString(cfg["left"]["email"][0] * mm, cfg["left"]["email"][1] * mm, str(ctx.get("email") or ""))
-        c.drawString(cfg["left"]["date"][0] * mm, cfg["left"]["date"][1] * mm, str(ctx.get("today_pt") or ""))
+        c.drawString(cfg["left"]["nif"][0] * mm, cfg["left"]["nif"][1] * mm, _fix_mojibake(ctx.get("vat_number") or ""))
+        c.drawString(cfg["left"]["phone"][0] * mm, cfg["left"]["phone"][1] * mm, _fix_mojibake(ctx.get("phone") or ""))
+        c.drawString(cfg["left"]["email"][0] * mm, cfg["left"]["email"][1] * mm, _fix_mojibake(ctx.get("email") or ""))
+        c.drawString(cfg["left"]["date"][0] * mm, cfg["left"]["date"][1] * mm, _fix_mojibake(ctx.get("today_pt") or ""))
 
         nx = cfg["right"]["name"][0] * mm
         ny = cfg["right"]["name"][1] * mm
-        fantasy = str(ctx.get("client_fantasy") or "").strip()
-        legal = str(ctx.get("client_legal") or "").strip()
+        fantasy = _fix_mojibake(ctx.get("client_fantasy") or "")
+        legal = _fix_mojibake(ctx.get("client_legal") or "")
         maxw = 68 * mm
 
         if fantasy and legal and fantasy.lower() != legal.lower():
@@ -483,8 +547,8 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
                 font=FONT_BOLD, size=10, leading=9,
             )
 
-        fiscal1 = str(ctx.get("fiscal_address") or "").strip()
-        fiscal2 = f"{ctx.get('postal_code') or ''} {ctx.get('city') or ''}".strip()
+        fiscal1 = _fix_mojibake(ctx.get("fiscal_address") or "")
+        fiscal2 = _fix_mojibake(f"{ctx.get('postal_code') or ''} {ctx.get('city') or ''}".strip())
 
         fiscal_x = 147 * mm
         fiscal1_y = 238 * mm
@@ -511,10 +575,10 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
         c.drawString(
             cfg["contract_no"][0] * mm,
             cfg["contract_no"][1] * mm,
-            f"Nº {ctx.get('client_number') or ''}",
+            f"Nº {_fix_mojibake(ctx.get('client_number') or '')}",
         )
 
-        value = str(ctx.get("contract_value_yearly") or "").strip()
+        value = _fix_mojibake(ctx.get("contract_value_yearly") or "")
         c.setFont(FONT_REGULAR, 11)
 
         if value:
@@ -535,8 +599,10 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
         if visits:
             c.drawString(cfg["visits"][0] * mm, cfg["visits"][1] * mm, f"{visits:02d}")
 
-        service1 = str(ctx.get("service_address") or fiscal1).strip()
-        service2 = f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        service1 = _fix_mojibake(ctx.get("service_address") or fiscal1)
+        service2 = _fix_mojibake(
+            f"{ctx.get('service_postal_code') or ctx.get('postal_code') or ''} {ctx.get('service_city') or ctx.get('city') or ''}".strip()
+        )
 
         c.setFont(FONT_REGULAR, 10)
 
@@ -568,25 +634,25 @@ def _draw_contract_overlay(template_pdf: Path, ctx: Dict[str, Any], variant: str
 def build_client_dossier_pdf(db, client) -> bytes:
     _ensure_templates_exist()
 
-    client_number = getattr(client, "client_code", None) or getattr(client, "id", "") or ""
+    client_number = _fix_mojibake(getattr(client, "client_code", None) or getattr(client, "id", "") or "")
 
-    client_fantasy = (getattr(client, "business_name", None) or "").strip()
-    client_legal = (getattr(client, "name", None) or "").strip()
+    client_fantasy = _fix_mojibake(getattr(client, "business_name", None))
+    client_legal = _fix_mojibake(getattr(client, "name", None))
 
     if not client_fantasy and client_legal:
         client_fantasy = client_legal
     if not client_legal and client_fantasy:
         client_legal = client_fantasy
 
-    vat_number = getattr(client, "vat_number", None) or ""
-    email = getattr(client, "email", None) or ""
-    phone = getattr(client, "phone", None) or ""
+    vat_number = _fix_mojibake(getattr(client, "vat_number", None))
+    email = _fix_mojibake(getattr(client, "email", None))
+    phone = _fix_mojibake(getattr(client, "phone", None))
 
-    fiscal_address = getattr(client, "address", None) or ""
-    postal_code = getattr(client, "postal_code", None) or ""
-    city = getattr(client, "city", None) or ""
+    fiscal_address = _fix_mojibake(getattr(client, "address", None))
+    postal_code = _fix_mojibake(getattr(client, "postal_code", None))
+    city = _fix_mojibake(getattr(client, "city", None))
 
-    notes = (
+    notes = _fix_mojibake(
         getattr(client, "notes", None)
         or getattr(client, "note", None)
         or getattr(client, "observations", None)
@@ -596,17 +662,17 @@ def build_client_dossier_pdf(db, client) -> bytes:
 
     service_from_notes = _parse_service_from_notes(notes)
 
-    service_address = (
+    service_address = _fix_mojibake(
         getattr(client, "service_address", None)
         or service_from_notes.get("service_address")
         or fiscal_address
     )
-    service_postal_code = (
+    service_postal_code = _fix_mojibake(
         getattr(client, "service_postal_code", None)
         or service_from_notes.get("service_postal_code")
         or postal_code
     )
-    service_city = (
+    service_city = _fix_mojibake(
         getattr(client, "service_city", None)
         or service_from_notes.get("service_city")
         or city
@@ -637,7 +703,7 @@ def build_client_dossier_pdf(db, client) -> bytes:
         try:
             value_str = f"{float(contract_value_yearly_base):.2f}".replace(".", ",")
         except Exception:
-            value_str = str(contract_value_yearly_base)
+            value_str = _fix_mojibake(contract_value_yearly_base)
 
     ctx: Dict[str, Any] = {
         "today_pt": contract_date_pt,

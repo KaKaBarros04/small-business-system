@@ -86,8 +86,31 @@ def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: d
     y = H - margin_top
     page_no = 1
 
+    def fix_mojibake(s: str) -> str:
+        if not s:
+            return ""
+
+        markers = ("Ã", "Â", "├", "┬")
+        if not any(m in s for m in markers):
+            return s
+
+        attempts = []
+
+        for enc in ("latin1", "cp1252"):
+            try:
+                attempts.append(s.encode(enc).decode("utf-8"))
+            except Exception:
+                pass
+
+        for a in attempts:
+            if a and a != s and not any(m in a for m in ("├", "┬", "Ã", "Â")):
+                return a
+
+        return attempts[0] if attempts else s
+
     def safe(s) -> str:
-        return ("" if s is None else str(s)).strip()
+        raw = "" if s is None else str(s)
+        return fix_mojibake(raw).strip()
 
     def dash(s: str) -> str:
         s = safe(s)

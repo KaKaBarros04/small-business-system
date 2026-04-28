@@ -14,11 +14,53 @@ function eur(n) {
   return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(x);
 }
 
+function fixText(s) {
+  if (s == null) return "";
+  let text = String(s);
+
+  const hasMojibake = /Ã|Â|├|┬/.test(text);
+  if (!hasMojibake) return text;
+
+  const map = {
+    "├º": "ç",
+    "├ú": "ã",
+    "├í": "á",
+    "├®": "é",
+    "├¡": "í",
+    "├│": "ó",
+    "├║": "ú",
+    "├Á": "Á",
+    "├Ç": "Ç",
+    "├É": "É",
+    "├Õ": "Õ",
+    "┬º": "º",
+    "┬ª": "ª",
+    "Âº": "º",
+    "Âª": "ª",
+    "Ã§": "ç",
+    "Ã£": "ã",
+    "Ã¡": "á",
+    "Ã©": "é",
+    "Ã­": "í",
+    "Ã³": "ó",
+    "Ãº": "ú",
+    "Ãµ": "õ",
+    "Ãª": "ê",
+    "Ã¢": "â",
+  };
+
+  for (const [bad, good] of Object.entries(map)) {
+    text = text.split(bad).join(good);
+  }
+
+  return text;
+}
+
 function norm(s) {
-  return String(s || "")
+  return fixText(s)
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 }
 
 const DEFAULT_NOTES = `SERVICE_ADDR: 
@@ -85,7 +127,20 @@ export default function Clients() {
     setErr("");
     try {
       const res = await api.listClients();
-      setClients(res || []);
+      setClients(
+        (res || []).map((c) => ({
+          ...c,
+          name: fixText(c?.name),
+          business_name: fixText(c?.business_name),
+          contact_name: fixText(c?.contact_name),
+          nickname: fixText(c?.nickname),
+          address: fixText(c?.address),
+          postal_code: fixText(c?.postal_code),
+          city: fixText(c?.city),
+          pest_type: fixText(c?.pest_type),
+          notes: fixText(c?.notes),
+        }))
+      );
     } catch (e) {
       setErr(e?.message || "Erro ao carregar clientes");
     } finally {
@@ -166,22 +221,22 @@ export default function Clients() {
     setEditingId(c.id);
 
     setForm({
-      name: c?.name || "",
+      name: fixText(c?.name) || "",
       email: c?.email || "",
       phone: c?.phone || "",
 
       client_code: c?.client_code || "",
-      business_name: c?.business_name || "",
-      contact_name: c?.contact_name || "",
-      nickname: c?.nickname || "",
+      business_name: fixText(c?.business_name) || "",
+      contact_name: fixText(c?.contact_name) || "",
+      nickname: fixText(c?.nickname) || "",
 
       vat_number: c?.vat_number || "",
-      address: c?.address || "",
-      postal_code: c?.postal_code || "",
-      city: c?.city || "",
+      address: fixText(c?.address) || "",
+      postal_code: fixText(c?.postal_code) || "",
+      city: fixText(c?.city) || "",
 
-      pest_type: isDesinfex ? c?.pest_type || "" : "",
-      notes: c?.notes || "",
+      pest_type: isDesinfex ? fixText(c?.pest_type) || "" : "",
+      notes: fixText(c?.notes) || "",
 
       has_contract: isDesinfex ? !!c?.has_contract : false,
       contract_start_date: isDesinfex && c?.contract_start_date ? String(c.contract_start_date).slice(0, 10) : "",
@@ -693,7 +748,7 @@ SERVICE_CITY: (cidade)
           <div className="modalCard" onClick={(e) => e.stopPropagation()}>
             <h3>Renovar contrato</h3>
             <p>
-              Cliente: <b>{renewClient?.business_name || renewClient?.name || "—"}</b>
+              Cliente: <b>{fixText(renewClient?.business_name || renewClient?.name || "—")}</b>
             </p>
 
             <div className="modalGrid">
@@ -830,12 +885,12 @@ SERVICE_CITY: (cidade)
                       <div className="idcl">{c.client_code || c.id}</div>
 
                       <div className="clientsCell nameCell">
-                        <b>{c.business_name || c.name}</b>
+                        <b>{fixText(c.business_name || c.name)}</b>
                         <div className="subLine">
-                          {c.name ? <span>Resp: {c.name}</span> : null}
-                          {c.city ? ` • ${c.city}` : " • —"}
-                          {c.postal_code ? ` (${c.postal_code})` : ""}
-                          {c.contact_name ? ` • ${c.contact_name}` : ""}
+                          {c.name ? <span>Resp: {fixText(c.name)}</span> : null}
+                          {c.city ? ` • ${fixText(c.city)}` : " • —"}
+                          {c.postal_code ? ` (${fixText(c.postal_code)})` : ""}
+                          {c.contact_name ? ` • ${fixText(c.contact_name)}` : ""}
                         </div>
                       </div>
 
@@ -877,7 +932,7 @@ SERVICE_CITY: (cidade)
                             <span className="badge">€ {Number(c.contract_value_yearly)}/ano</span>
                           ) : null}
 
-                          {c.pest_type ? <span className="badge">Praga: {c.pest_type}</span> : null}
+                          {c.pest_type ? <span className="badge">Praga: {fixText(c.pest_type)}</span> : null}
                         </>
                       ) : null}
                     </div>
