@@ -1,3 +1,4 @@
+# app/routers/reports.py
 from __future__ import annotations
 
 from datetime import datetime, date
@@ -28,7 +29,6 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT
-
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -36,10 +36,6 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOADS_DIR = BASE_DIR / "uploads"
-
-# =========================================================
-# PDF Fonts - Unicode para acentos, ç, ã, õ, é, etc.
-# =========================================================
 
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
@@ -84,9 +80,57 @@ def _register_pdf_fonts():
             return
 
 
-# =========================================================
-# Helpers
-# =========================================================
+_register_pdf_fonts()
+
+
+def _fix_text(x) -> str:
+    if x is None:
+        return ""
+
+    text = str(x)
+
+    replacements = {
+        "Ã¡": "á",
+        "Ã ": "à",
+        "Ã¢": "â",
+        "Ã£": "ã",
+        "Ãª": "ê",
+        "Ã©": "é",
+        "Ã­": "í",
+        "Ã³": "ó",
+        "Ã´": "ô",
+        "Ãµ": "õ",
+        "Ãº": "ú",
+        "Ã§": "ç",
+        "Ã€": "À",
+        "ÃÁ": "Á",
+        "Ã‰": "É",
+        "Ã“": "Ó",
+        "Ãš": "Ú",
+        "Ã‡": "Ç",
+        "Âº": "º",
+        "Âª": "ª",
+        "├í": "á",
+        "├®": "é",
+        "├¡": "í",
+        "├│": "ó",
+        "├║": "ú",
+        "├ú": "ã",
+        "├º": "ç",
+        "┬º": "º",
+        "┬ª": "ª",
+    }
+
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
+
+    return text
+
+
+def _safe_str(x, fallback="—"):
+    s = _fix_text(x).strip() if x is not None else ""
+    return s if s else fallback
+
 
 def _eur(v) -> str:
     try:
@@ -108,11 +152,6 @@ def _fmt_date(d: Optional[date]) -> str:
     return d.strftime("%d/%m/%Y")
 
 
-def _safe_str(x, fallback="—"):
-    s = (str(x).strip() if x is not None else "")
-    return s if s else fallback
-
-
 def _as_number(x) -> float:
     try:
         return float(x or 0)
@@ -123,7 +162,7 @@ def _as_number(x) -> float:
 def _join_address_parts(*parts) -> str:
     vals = []
     for p in parts:
-        s = (str(p).strip() if p is not None else "")
+        s = _safe_str(p, "")
         if s:
             vals.append(s)
     return ", ".join(vals) if vals else "—"
@@ -140,7 +179,7 @@ def _invoice_service_text(inv: ManualInvoice) -> str:
 
     descriptions = []
     for it in items:
-        desc = (getattr(it, "description", None) or "").strip()
+        desc = _safe_str(getattr(it, "description", None), "")
         if desc:
             descriptions.append(desc)
 
@@ -296,10 +335,6 @@ def _resolve_logo_path(company: Company) -> str | None:
     return str(p) if p.exists() else None
 
 
-# =========================================================
-# Visual system
-# =========================================================
-
 BRAND = colors.HexColor("#0F172A")
 TEXT = colors.HexColor("#111827")
 MUTED = colors.HexColor("#6B7280")
@@ -372,9 +407,10 @@ AVI_DESC = ParagraphStyle(
     leading=8.2,
 )
 
-# =========================================================
-# Generic header/footer/table helpers
-# =========================================================
+
+def _p(text, style=CELL_SMALL):
+    return Paragraph(_safe_str(text), style)
+
 
 def _draw_header_footer(
     c: canvas.Canvas,
@@ -390,7 +426,7 @@ def _draw_header_footer(
 
     c.setFillColor(colors.black)
     c.setFont(FONT_BOLD, 14)
-    c.drawString(left, top, title)
+    c.drawString(left, top, _safe_str(title, ""))
 
     c.setFont(FONT_REGULAR, 9)
     info_y = top - 14
@@ -419,6 +455,7 @@ def _draw_header_footer(
         f"Morada: {_safe_str(getattr(company, 'address', None))}",
         f"Telefone: {_safe_str(getattr(company, 'phone', None))}   Email: {_safe_str(getattr(company, 'email', None))}",
     ]
+
     for i, ln in enumerate(lines):
         c.drawString(left, info_y - i * line_h, ln)
 
@@ -517,6 +554,7 @@ def _draw_table_paginated(
         current.drawOn(c, margin, current_y - h)
 
         rows_drawn = len(current._cellvalues)
+
         if rows_drawn >= len(remaining):
             break
 
@@ -529,10 +567,6 @@ def _draw_table_paginated(
         c.drawString(margin, top_after_header, "Lista")
         first_page = False
 
-
-# =========================================================
-# AVI-specific helpers
-# =========================================================
 
 def _draw_clean_footer(c: canvas.Canvas, *, page_w: float):
     margin = 14 * mm
@@ -618,9 +652,9 @@ def _draw_avi_header(
 
     right_text = "<br/>".join([
         "Exmo.(s) Sr.(s)",
-        f"<b>{client_name}</b>",
-        f"Responsável: {client_responsible}",
-        client_address,
+        f"<b>{_safe_str(client_name)}</b>",
+        f"Responsável: {_safe_str(client_responsible)}",
+        _safe_str(client_address),
     ])
 
     left_p = Paragraph(left_text, info_style)
@@ -641,7 +675,7 @@ def _draw_avi_header(
 
     c.setFont(FONT_REGULAR, 8)
     c.setFillColor(TEXT)
-    c.drawString(margin, doc_y, f"Encomendas  NE AVI.{document_number}")
+    c.drawString(margin, doc_y, f"Encomendas  NE AVI.{_safe_str(document_number, '')}")
 
     c.setFont(FONT_BOLD, 13)
     c.drawString(margin, doc_y - 7 * mm, "Aviso de Cobrança")
@@ -659,16 +693,16 @@ def _draw_avi_header(
     c.drawString(222 * mm, meta_top, "Condição Pagamento")
 
     c.setFont(FONT_REGULAR, 8)
-    c.drawString(margin, meta_top - 5 * mm, issue_date_label)
+    c.drawString(margin, meta_top - 5 * mm, _safe_str(issue_date_label, ""))
     c.drawString(85 * mm, meta_top - 5 * mm, "EUR")
     c.drawRightString(113 * mm, meta_top - 5 * mm, "1,00")
     c.drawRightString(151 * mm, meta_top - 5 * mm, "0,00")
     c.drawRightString(186 * mm, meta_top - 5 * mm, "0,00")
-    c.drawString(191 * mm, meta_top - 5 * mm, issue_date_label)
+    c.drawString(191 * mm, meta_top - 5 * mm, _safe_str(issue_date_label, ""))
     c.drawString(222 * mm, meta_top - 5 * mm, "Pronto Pagamento")
 
     c.drawString(margin, meta_top - 11 * mm, "V/N.º Contrib.")
-    c.drawString(margin, meta_top - 16 * mm, client_vat)
+    c.drawString(margin, meta_top - 16 * mm, _safe_str(client_vat, ""))
 
     return meta_top - 23 * mm
 
@@ -694,20 +728,15 @@ def _build_main_table(table_data, colw):
         ("TEXTCOLOR", (0, 0), (-1, 0), TEXT),
         ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
         ("FONTSIZE", (0, 0), (-1, 0), 7.6),
-
         ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
         ("FONTSIZE", (0, 1), (-1, -1), 7.4),
-
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-
         ("LEFTPADDING", (0, 0), (-1, -1), 2.2),
         ("RIGHTPADDING", (0, 0), (-1, -1), 2.2),
         ("TOPPADDING", (0, 0), (-1, -1), 3.2),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3.2),
-
         ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black),
         ("LINEBELOW", (0, 1), (-1, -1), 0.25, colors.HexColor("#D1D5DB")),
-
         ("ALIGN", (0, 0), (2, -1), "LEFT"),
         ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
     ]))
@@ -728,12 +757,12 @@ def _draw_summary_box(
     invoice_count: int,
 ):
     rows = [
-        ("Cliente", client_name),
+        ("Cliente", _safe_str(client_name)),
         ("Quantidade", str(invoice_count)),
         ("Subtotal", _eur(total_subtotal)),
         ("IVA", _eur(total_tax)),
         ("Total", _eur(total_total)),
-        ("IBAN", company_iban),
+        ("IBAN", _safe_str(company_iban)),
     ]
 
     row_h = 5.4 * mm
@@ -789,7 +818,7 @@ def _draw_notes_block(
 
     notes_text = (
         "Este documento é um aviso de cobrança / pré-fatura e não substitui a fatura final emitida.<br/>"
-        f"O pagamento deverá ser efetuado por transferência bancária para o IBAN {company_iban}.<br/>"
+        f"O pagamento deverá ser efetuado por transferência bancária para o IBAN {_safe_str(company_iban)}.<br/>"
         "Após pagamento ou validação contabilística, poderá ser emitida a fatura definitiva."
     )
 
@@ -797,10 +826,6 @@ def _draw_notes_block(
     _, ph = p.wrap(width, 40 * mm)
     p.drawOn(c, x, y - 4 * mm - ph)
 
-
-# =========================================================
-# Routes
-# =========================================================
 
 @router.get("/stock.pdf")
 def stock_pdf(
@@ -848,9 +873,9 @@ def stock_pdf(
         est = suggest * unit_cost
 
         rows.append([
-            Paragraph(_safe_str(it.name), CELL_SMALL),
-            Paragraph(_safe_str(it.sku), CELL_SMALL),
-            Paragraph(_safe_str(it.unit), CELL_SMALL),
+            _p(getattr(it, "name", None)),
+            _p(getattr(it, "sku", None)),
+            _p(getattr(it, "unit", None)),
             Paragraph(f"{qty:.3f}".rstrip("0").rstrip("."), CELL_RIGHT),
             Paragraph(f"{target:.3f}".rstrip("0").rstrip("."), CELL_RIGHT),
             Paragraph(f"{lack:.3f}".rstrip("0").rstrip("."), CELL_RIGHT),
@@ -1004,17 +1029,14 @@ def clients_pdf(
     rows = []
     for cst in clients:
         rows.append([
-            Paragraph(str(getattr(cst, "client_code", "") or cst.id), CELL_SMALL),
-            Paragraph(_safe_str(getattr(cst, "business_name", None)), CELL_SMALL),
-            Paragraph(_safe_str(getattr(cst, "vat_number", None)), CELL_SMALL),
-            Paragraph(_safe_str(getattr(cst, "city", None)), CELL_SMALL),
-            Paragraph(_safe_str(getattr(cst, "phone", None)), CELL_SMALL),
-            Paragraph(_fmt_date(getattr(cst, "contract_start_date", None)), CELL_SMALL),
-            Paragraph(
-                str(getattr(cst, "visits_per_year", "") or "—") if getattr(cst, "has_contract", False) else "—",
-                CELL_SMALL,
-            ),
-            Paragraph("Ativo" if getattr(cst, "is_active", True) else "Inativo", CELL_SMALL),
+            _p(getattr(cst, "client_code", None) or cst.id),
+            _p(getattr(cst, "business_name", None)),
+            _p(getattr(cst, "vat_number", None)),
+            _p(getattr(cst, "city", None)),
+            _p(getattr(cst, "phone", None)),
+            _p(_fmt_date(getattr(cst, "contract_start_date", None))),
+            _p(str(getattr(cst, "visits_per_year", "") or "—") if getattr(cst, "has_contract", False) else "—"),
+            _p("Ativo" if getattr(cst, "is_active", True) else "Inativo"),
         ])
 
     buf = io.BytesIO()
@@ -1067,6 +1089,7 @@ def clients_pdf(
 
     c.save()
     buf.seek(0)
+
     return StreamingResponse(
         buf,
         media_type="application/pdf",
@@ -1103,8 +1126,8 @@ def expenses_pdf(
         total += _as_number(e.amount)
         rows.append([
             Paragraph(_fmt_dt(getattr(e, "date", None)), CELL),
-            Paragraph(_safe_str(getattr(e, "category", None)), CELL),
-            Paragraph(_safe_str(getattr(e, "description", None)), CELL),
+            _p(getattr(e, "category", None), CELL),
+            _p(getattr(e, "description", None), CELL),
             Paragraph(_eur(getattr(e, "amount", 0)), CELL_RIGHT),
         ])
 
@@ -1187,22 +1210,22 @@ def visits_pdf(
             continue
 
         rows.append({
-            "client_code": getattr(client, "client_code", None) or getattr(client, "id", None),
-            "business_name": getattr(client, "business_name", None) or getattr(client, "name", None),
-            "address": getattr(client, "address", None),
-            "postal_code": getattr(client, "postal_code", None),
-            "city": getattr(client, "city", None),
-            "service_address": getattr(client, "service_address", None),
-            "service_postal_code": getattr(client, "service_postal_code", None),
-            "service_city": getattr(client, "service_city", None),
-            "notes": getattr(client, "notes", None),
+            "client_code": _safe_str(getattr(client, "client_code", None) or getattr(client, "id", None), ""),
+            "business_name": _safe_str(getattr(client, "business_name", None) or getattr(client, "name", None), ""),
+            "address": _safe_str(getattr(client, "address", None), ""),
+            "postal_code": _safe_str(getattr(client, "postal_code", None), ""),
+            "city": _safe_str(getattr(client, "city", None), ""),
+            "service_address": _safe_str(getattr(client, "service_address", None), ""),
+            "service_postal_code": _safe_str(getattr(client, "service_postal_code", None), ""),
+            "service_city": _safe_str(getattr(client, "service_city", None), ""),
+            "notes": _safe_str(getattr(client, "notes", None), ""),
             "scheduled_at_str": appt.scheduled_at.strftime("%d/%m/%Y") if appt.scheduled_at else "",
         })
 
     pdf_bytes = build_visits_pdf(
         company={
-            "name": getattr(company, "name", None),
-            "business_name": getattr(company, "business_name", None),
+            "name": _safe_str(getattr(company, "name", None), ""),
+            "business_name": _safe_str(getattr(company, "business_name", None), ""),
             "logo": None,
             "logo_path": getattr(company, "logo_path", None),
         },
@@ -1303,17 +1326,17 @@ def pending_invoices_pdf(
         issue_date_text = _fmt_date(issue_date.date()) if issue_date else "—"
 
         rows.append([
-            Paragraph(_safe_str(client_code), CELL_SMALL),
-            Paragraph(_safe_str(client_company_name), CELL_SMALL),
-            Paragraph(_safe_str(client_responsible), CELL_SMALL),
-            Paragraph(_safe_str(address), CELL_SMALL),
-            Paragraph(_safe_str(getattr(inv, "invoice_kind", None), "—"), CELL_SMALL),
-            Paragraph(issue_date_text, CELL_SMALL),
-            Paragraph(_safe_str(service_text), CELL_SMALL),
+            _p(client_code),
+            _p(client_company_name),
+            _p(client_responsible),
+            _p(address),
+            _p(getattr(inv, "invoice_kind", None)),
+            _p(issue_date_text),
+            _p(service_text),
             Paragraph(_eur(subtotal), CELL_RIGHT),
             Paragraph(_eur(tax), CELL_RIGHT),
             Paragraph(_eur(total), CELL_RIGHT),
-            Paragraph(_safe_str(getattr(inv, "invoice_number", None)), CELL_SMALL),
+            _p(getattr(inv, "invoice_number", None)),
         ])
 
     buf = io.BytesIO()
@@ -1471,12 +1494,12 @@ def client_pending_invoices_avi_pdf(
 
     invoices = qry.order_by(ManualInvoice.issue_date.asc(), ManualInvoice.id.asc()).all()
 
-    client_name = (
+    client_name = _safe_str(
         getattr(client, "business_name", None)
         or getattr(client, "name", None)
         or "—"
     )
-    client_responsible = (
+    client_responsible = _safe_str(
         getattr(client, "contact_name", None)
         or getattr(client, "name", None)
         or "—"
@@ -1515,10 +1538,10 @@ def client_pending_invoices_avi_pdf(
 
             rows.append([
                 Paragraph(str(line_no), CELL_SMALL),
-                Paragraph(_safe_str(line["article"]), CELL_SMALL),
+                _p(line["article"]),
                 Paragraph(_safe_str(line["description"]), AVI_DESC),
                 Paragraph(_fmt_number(line["qty"]), CELL_RIGHT),
-                Paragraph(_safe_str(line["unit"], "UN"), CELL_SMALL),
+                _p(line["unit"]),
                 Paragraph(_fmt_number(line["unit_price"]), CELL_RIGHT),
                 Paragraph(_fmt_number(line["discount"]), CELL_RIGHT),
                 Paragraph(_fmt_number(line["vat_rate"]), CELL_RIGHT),
@@ -1592,15 +1615,15 @@ def client_pending_invoices_avi_pdf(
     )
 
     colw = [
-        9 * mm,   # Nº
-        18 * mm,  # Artigo
-        72 * mm,  # Descrição
-        12 * mm,  # Qtd.
-        10 * mm,  # Un.
-        17 * mm,  # Pr. Unit.
-        12 * mm,  # Desc.
-        12 * mm,  # IVA
-        18 * mm,  # Valor
+        9 * mm,
+        18 * mm,
+        72 * mm,
+        12 * mm,
+        10 * mm,
+        17 * mm,
+        12 * mm,
+        12 * mm,
+        18 * mm,
     ]
 
     t = _build_main_table(table_data, colw)

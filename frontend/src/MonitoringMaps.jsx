@@ -732,9 +732,19 @@ export default function MonitoringMaps() {
                 onClick={handleMapClick}
               >
                 <img
-                  src={resolveApiUrl(selectedMap.image_path)}
-                  alt={selectedMap.name}
-                  className="mapImage"
+                    key={selectedMap.image_path}
+                    src={`${resolveApiUrl(selectedMap.image_path)}?v=${selectedMap.updated_at || selectedMap.id}`}
+                    alt={selectedMap.name}
+                    className="mapImage"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      setError(
+                        "Imagem da planta não encontrada no servidor. Se isto aconteceu depois do Render reiniciar, precisa de Persistent Disk ou guardar imagens fora do Render."
+                      );
+                    }}
+                    onLoad={(e) => {
+                      e.currentTarget.style.display = "block";
+                    }}
                 />
 
                 {(selectedMap.points || []).map((point) => (
