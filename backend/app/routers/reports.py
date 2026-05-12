@@ -221,6 +221,7 @@ def _extract_avi_lines_from_invoice(inv: ManualInvoice):
     items = getattr(inv, "items", None) or []
     lines = []
 
+    # Caso não existam linhas/items na fatura
     if not items:
         subtotal = float(getattr(inv, "subtotal", 0) or 0)
         tax = float(getattr(inv, "tax", 0) or 0)
@@ -230,20 +231,28 @@ def _extract_avi_lines_from_invoice(inv: ManualInvoice):
         if subtotal > 0 and tax > 0:
             inferred_rate = round((tax / subtotal) * 100, 2)
 
+        # TOTAL COM IVA
+        final_total = total if total > 0 else (subtotal + tax)
+
         lines.append({
             "article": "DOM/CORR",
             "description": _invoice_service_text(inv),
             "qty": 1.0,
             "unit": "UN",
-            "unit_price": subtotal if subtotal > 0 else total,
+            "unit_price": subtotal if subtotal > 0 else final_total,
             "discount": 0.0,
             "vat_rate": inferred_rate,
-            "line_total": subtotal if subtotal > 0 else total,
+
+            # CORRIGIDO
+            "line_total": final_total,
+
             "line_subtotal": subtotal,
             "line_tax": tax,
         })
+
         return lines
 
+    # Caso existam items reais
     for item in items:
         qty = (
             getattr(item, "quantity", None)
@@ -299,8 +308,14 @@ def _extract_avi_lines_from_invoice(inv: ManualInvoice):
             or "—"
         )
 
+        # SUBTOTAL SEM IVA
         line_subtotal = qty * unit_price * (1 - (discount / 100.0))
+
+        # IVA
         line_tax = line_subtotal * (vat_rate / 100.0)
+
+        # TOTAL COM IVA
+        line_total = line_subtotal + line_tax
 
         lines.append({
             "article": _safe_str(article),
@@ -310,13 +325,15 @@ def _extract_avi_lines_from_invoice(inv: ManualInvoice):
             "unit_price": unit_price,
             "discount": discount,
             "vat_rate": vat_rate,
-            "line_total": line_subtotal,
+
+            # CORRIGIDO
+            "line_total": line_total,
+
             "line_subtotal": line_subtotal,
             "line_tax": line_tax,
         })
 
     return lines
-
 
 def _resolve_logo_path(company: Company) -> str | None:
     if not company or not getattr(company, "logo_path", None):
