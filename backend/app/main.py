@@ -1,19 +1,22 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from pathlib import Path
 
-import app.models  # garante que todos os models sejam carregados
+import app.models
 
-from app.core.database import engine, Base  # ✅ IMPORTANTE: trazer Base daqui
+from app.core.database import engine, Base
 
 from app.routers.auth import router as auth_router
 from app.routers.clients import router as clients_router
 from app.core.auth import get_current_user
 from app.models.user import User
 from app.schemas.user import UserMe
+
 from app.routers import company
 from app.routers import services
 from app.routers import appointments
@@ -24,7 +27,6 @@ from app.routers import audit_logs
 from app.routers import group
 from app.routers import reports
 from app.routers import stock
-from app.routers import reports_extra
 from app.routers.admin_permissions import router as admin_permissions_router
 from app.routers import admin_users
 from app.routers.permissions_me import router as permissions_me_router
@@ -38,11 +40,30 @@ app = FastAPI(
     version="0.1.0",
 )
 
-BASE_DIR = Path(__file__).resolve().parents[1]  # backend/
-UPLOADS_DIR = BASE_DIR / "uploads"
-UPLOADS_DIR.mkdir(exist_ok=True)
+# =====================================================
+# Uploads (compatível com Render Disk)
+# =====================================================
 
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+UPLOADS_DIR = Path(
+    os.getenv(
+        "UPLOADS_DIR",
+        str(BASE_DIR / "uploads")
+    )
+)
+
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory=str(UPLOADS_DIR)),
+    name="uploads"
+)
+
+# =====================================================
+# CORS
+# =====================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,7 +73,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="/auth/login"
+)
+
+# =====================================================
+# Routers
+# =====================================================
 
 app.include_router(auth_router)
 app.include_router(clients_router)
@@ -66,7 +93,6 @@ app.include_router(audit_logs.router)
 app.include_router(group.router)
 app.include_router(reports.router)
 app.include_router(stock.router)
-app.include_router(reports_extra.router)
 app.include_router(admin_permissions_router)
 app.include_router(admin_users.router)
 app.include_router(permissions_me_router)
@@ -74,16 +100,22 @@ app.include_router(dossiers_router)
 app.include_router(site_maps.router)
 app.include_router(permissions.router)
 
+# =====================================================
+# Endpoints utilitários
+# =====================================================
 
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
+
 @app.get("/db-check")
 def db_check():
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
+
     return {"db": "ok"}
+
 
 @app.get("/me", response_model=UserMe)
 def me(current_user: User = Depends(get_current_user)):

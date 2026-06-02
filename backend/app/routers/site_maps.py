@@ -37,7 +37,7 @@ from app.utils.audit import log_action
 router = APIRouter(prefix="/site-maps", tags=["site-maps"])
 
 BASE_DIR = Path(__file__).resolve().parents[2]   # backend/
-UPLOADS_DIR = BASE_DIR / "uploads"
+UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", BASE_DIR / "uploads"))
 SITE_MAPS_DIR = UPLOADS_DIR / "site_maps"
 SITE_MAPS_DIR.mkdir(parents=True, exist_ok=True)
 

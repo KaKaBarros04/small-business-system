@@ -1,18 +1,19 @@
+# backend/app/services/pdf_visits.py
 from __future__ import annotations
 
 from io import BytesIO
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
+from typing import List, Dict
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -20,73 +21,114 @@ FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 
 
-def _register_pdf_fonts():
+def _register_fonts():
     global FONT_REGULAR, FONT_BOLD
 
     candidates = [
-        (str(BASE_DIR / "fonts" / "DejaVuSans.ttf"), str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf")),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
-        ("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"),
-        ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
-        ("/app/fonts/DejaVuSans.ttf", "/app/fonts/DejaVuSans-Bold.ttf"),
-        ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
+        (
+            str(BASE_DIR / "fonts" / "DejaVuSans.ttf"),
+            str(BASE_DIR / "fonts" / "DejaVuSans-Bold.ttf"),
+        ),
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+        ),
+        (
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        ),
+        (
+            "/app/fonts/DejaVuSans.ttf",
+            "/app/fonts/DejaVuSans-Bold.ttf",
+        ),
     ]
 
     for regular, bold in candidates:
         if Path(regular).exists() and Path(bold).exists():
-            pdfmetrics.registerFont(TTFont("AppFont", regular))
-            pdfmetrics.registerFont(TTFont("AppFont-Bold", bold))
-            FONT_REGULAR = "AppFont"
-            FONT_BOLD = "AppFont-Bold"
-            return
+            try:
+                pdfmetrics.registerFont(TTFont("VisitFont", regular))
+                pdfmetrics.registerFont(TTFont("VisitFont-Bold", bold))
+                FONT_REGULAR = "VisitFont"
+                FONT_BOLD = "VisitFont-Bold"
+                return
+            except Exception:
+                continue
 
 
-_register_pdf_fonts()
+_register_fonts()
 
 
-def fix_mojibake(value) -> str:
-    if value is None:
+def _fix(x) -> str:
+    """Corrige mojibake de caracteres portugueses vindos da DB."""
+    if x is None:
         return ""
 
-    text = str(value)
+    text = str(x)
 
-    repl = {
-        "├º": "ç",
-        "├ú": "ã",
-        "├í": "á",
-        "├®": "é",
-        "├¡": "í",
-        "├│": "ó",
-        "├║": "ú",
-        "├á": "à",
-        "├ó": "â",
-        "├¬": "ê",
-        "├┤": "ô",
-        "├Á": "Á",
-        "├Ç": "Ç",
-        "├É": "É",
-        "├Õ": "Õ",
-        "┬º": "º",
-        "┬ª": "ª",
-        "Âº": "º",
-        "Âª": "ª",
-        "Ã§": "ç",
-        "Ã£": "ã",
-        "Ã¡": "á",
-        "Ã©": "é",
-        "Ã­": "í",
-        "Ã³": "ó",
-        "Ãº": "ú",
-        "Ãµ": "õ",
-        "Ãª": "ê",
-        "Ã¢": "â",
-        "Ã ": "à",
+    # Todas as chaves usam \uXXXX para evitar problemas de encoding do ficheiro
+    replacements = {
+        # Sequencias Ã (UTF-8 lido como latin1)
+        "\u00c3\u00a1": "\u00e1",  # a com acento agudo
+        "\u00c3\u00a0": "\u00e0",  # a com acento grave
+        "\u00c3\u00a2": "\u00e2",  # a com circunflexo
+        "\u00c3\u00a3": "\u00e3",  # a com til
+        "\u00c3\u00aa": "\u00ea",  # e com circunflexo
+        "\u00c3\u00a9": "\u00e9",  # e com acento agudo
+        "\u00c3\u00ad": "\u00ed",  # i com acento agudo
+        "\u00c3\u00b3": "\u00f3",  # o com acento agudo
+        "\u00c3\u00b4": "\u00f4",  # o com circunflexo
+        "\u00c3\u00b5": "\u00f5",  # o com til
+        "\u00c3\u00ba": "\u00fa",  # u com acento agudo
+        "\u00c3\u00a7": "\u00e7",  # c cedilha
+        "\u00c3\u0080": "\u00c0",  # A com acento grave
+        "\u00c3\u0081": "\u00c1",  # A com acento agudo
+        "\u00c3\u0089": "\u00c9",  # E com acento agudo
+        "\u00c3\u0093": "\u00d3",  # O com acento agudo
+        "\u00c3\u009a": "\u00da",  # U com acento agudo
+        "\u00c3\u0087": "\u00c7",  # C cedilha maiuscula
+        "\u00c3\u0095": "\u00d5",  # O com til maiusculo
+        "\u00c3\u0083": "\u00c3",  # A com til maiusculo
+        "\u00c3\u0082": "\u00c2",  # A com circunflexo maiusculo
+        # Sequencias Â
+        "\u00c2\u00ba": "\u00ba",  # ordinal masculino º
+        "\u00c2\u00aa": "\u00aa",  # ordinal feminino ª
+        "\u00c2\u00b0": "\u00b0",  # grau
+        "\u00c2\u00b7": "\u00b7",  # ponto medio
+        "\u00c2\u00ab": "\u00ab",  # guilhemets esquerda
+        "\u00c2\u00bb": "\u00bb",  # guilhemets direita
     }
 
-    for bad, good in repl.items():
+    for bad, good in replacements.items():
         text = text.replace(bad, good)
 
-    if any(m in text for m in ("Ã", "Â")):
+    # Sequencias com caracteres de box-drawing (┬ e ├)
+    # Estes nao se conseguem representar bem como literais, usa replace direto
+    box_replacements = [
+        ("\u252c\u00ba", "\u00ba"),   # ┬º -> º
+        ("\u252c\u2551", "\u00ba"),   # ┬║ -> º  (o bug principal!)
+        ("\u252c\u00aa", "\u00aa"),   # ┬ª -> ª
+        ("\u251c\u00ba", "\u00e7"),   # ├º -> ç
+        ("\u251c\u00fa", "\u00e3"),   # ├ú -> ã
+        ("\u251c\u00ed", "\u00e1"),   # ├í -> á
+        ("\u251c\u00ae", "\u00e9"),   # ├® -> é
+        ("\u251c\u00a1", "\u00ed"),   # ├¡ -> í
+        ("\u251c\u2502", "\u00f3"),   # ├│ -> ó
+        ("\u251c\u2551", "\u00fa"),   # ├║ -> ú
+        ("\u251c\u00e1", "\u00e0"),   # ├á -> à
+        ("\u251c\u00f3", "\u00e2"),   # ├ó -> â
+        ("\u251c\u00ac", "\u00ea"),   # ├¬ -> ê
+        ("\u251c\u2524", "\u00f4"),   # ├┤ -> ô
+    ]
+
+    for bad, good in box_replacements:
+        text = text.replace(bad, good)
+
+    # Tentativa generica para casos nao cobertos
+    if any(m in text for m in ("\u00c3", "\u00c2")):
         for enc in ("latin1", "cp1252"):
             try:
                 fixed = text.encode(enc).decode("utf-8")
@@ -99,261 +141,245 @@ def fix_mojibake(value) -> str:
     return text.strip()
 
 
-def build_visits_pdf(*, company: dict, rows: list[dict], start: datetime, end: datetime) -> bytes:
-    buf = BytesIO()
-    c = canvas.Canvas(buf, pagesize=A4)
-    W, H = A4
+def _safe(x, fallback="") -> str:
+    s = _fix(x).strip()
+    return s if s else fallback
 
-    margin_x = 10 * mm
-    margin_top = 12 * mm
-    margin_bottom = 12 * mm
 
-    x_num = margin_x
-    w_num = 18 * mm
+def _resolve_logo(logo_path) -> str | None:
+    if not logo_path:
+        return None
 
-    x_name = x_num + w_num
-    w_name = 78 * mm
+    path = str(logo_path).lstrip("/")
+    candidates = [
+        BASE_DIR / path,
+        BASE_DIR / "uploads" / Path(path).name,
+    ]
+    for p in candidates:
+        if p.exists():
+            return str(p)
+    return None
 
-    x_addr = x_name + w_name
-    w_addr = 78 * mm
 
-    x_date = x_addr + w_addr
-    x_right = W - margin_x
+BRAND_BLUE = colors.HexColor("#1E3A5F")
+LIGHT_GRAY = colors.HexColor("#F3F4F6")
+BORDER_GRAY = colors.HexColor("#E5E7EB")
+TEXT_DARK = colors.HexColor("#111827")
+TEXT_MUTED = colors.HexColor("#6B7280")
 
-    y = H - margin_top
-    page_no = 1
+_styles = getSampleStyleSheet()
 
-    def safe(s) -> str:
-        return fix_mojibake(s)
+CELL_STYLE = ParagraphStyle(
+    "VISITS_CELL",
+    parent=_styles["Normal"],
+    fontName=FONT_REGULAR,
+    fontSize=8,
+    leading=10,
+    textColor=TEXT_DARK,
+    wordWrap="CJK",
+    splitLongWords=True,
+)
 
-    def dash(s) -> str:
-        s = safe(s)
-        return s if s else "—"
+CELL_BOLD_STYLE = ParagraphStyle(
+    "VISITS_CELL_BOLD",
+    parent=CELL_STYLE,
+    fontName=FONT_BOLD,
+)
 
-    def fmt_pt_date(dt: datetime) -> str:
-        return dt.strftime("%d/%m/%Y") if dt else ""
+CELL_MUTED = ParagraphStyle(
+    "VISITS_CELL_MUTED",
+    parent=CELL_STYLE,
+    fontSize=7.5,
+    textColor=TEXT_MUTED,
+)
 
-    def fit_text(text: str, max_width: float, font: str, size: int) -> str:
-        t = safe(text)
-        if not t:
-            return ""
 
-        if stringWidth(t, font, size) <= max_width:
-            return t
+def _p(text, style=CELL_STYLE):
+    return Paragraph(_safe(text, "\u2014"), style)
 
-        ell = "…"
-        lo, hi = 0, len(t)
 
-        while lo < hi:
-            mid = (lo + hi) // 2
-            cand = t[:mid].rstrip() + ell
+def _draw_page_header(
+    c: canvas.Canvas,
+    *,
+    company: Dict,
+    start: datetime,
+    end: datetime,
+    page_w: float,
+    page_h: float,
+):
+    margin = 14 * mm
 
-            if stringWidth(cand, font, size) <= max_width:
-                lo = mid + 1
-            else:
-                hi = mid
-
-        cut = max(0, lo - 1)
-        return (t[:cut].rstrip() + ell) if cut > 0 else ell
-
-    def parse_service_from_notes(notes: str) -> dict:
-        notes = safe(notes)
-        if not notes:
-            return {}
-
-        out = {}
-
-        for raw in notes.splitlines():
-            line = raw.strip()
-            upper = line.upper()
-
-            if upper.startswith("SERVICE_ADDR:"):
-                out["service_address"] = safe(line.split(":", 1)[1])
-            elif upper.startswith("SERVICE_PC:"):
-                out["service_postal_code"] = safe(line.split(":", 1)[1])
-            elif upper.startswith("SERVICE_CITY:"):
-                out["service_city"] = safe(line.split(":", 1)[1])
-
-        return {k: v for k, v in out.items() if v}
-
-    def pick_service_address(row: dict) -> tuple[str, str, str]:
-        tagged = parse_service_from_notes(row.get("notes"))
-
-        addr = (
-            safe(row.get("service_address"))
-            or safe(tagged.get("service_address"))
-            or safe(row.get("address"))
-        )
-
-        postal = (
-            safe(row.get("service_postal_code"))
-            or safe(tagged.get("service_postal_code"))
-            or safe(row.get("postal_code"))
-        )
-
-        city = (
-            safe(row.get("service_city"))
-            or safe(tagged.get("service_city"))
-            or safe(row.get("city"))
-        )
-
-        return addr, postal, city
-
-    def draw_logo():
-        logo = company.get("logo") or company.get("logo_path")
-
-        if not logo:
-            return
-
+    logo_abs = _resolve_logo(company.get("logo_path"))
+    if logo_abs:
         try:
-            if isinstance(logo, (bytes, bytearray)):
-                img = ImageReader(BytesIO(logo))
-                c.drawImage(
-                    img,
-                    margin_x,
-                    y - 18 * mm,
-                    width=34 * mm,
-                    height=18 * mm,
-                    preserveAspectRatio=True,
-                    mask="auto",
-                )
-                return
-
-            logo_path = str(logo).strip()
-            p = Path(logo_path)
-
-            if logo_path.startswith("/uploads/"):
-                p = BASE_DIR / "uploads" / logo_path.split("/uploads/", 1)[1]
-            elif not p.is_absolute():
-                p = (BASE_DIR / p).resolve()
-
-            if p.exists() and p.is_file():
-                img = ImageReader(str(p))
-                c.drawImage(
-                    img,
-                    margin_x,
-                    y - 18 * mm,
-                    width=34 * mm,
-                    height=18 * mm,
-                    preserveAspectRatio=True,
-                    mask="auto",
-                )
+            c.drawImage(
+                logo_abs,
+                margin,
+                page_h - margin - 18 * mm,
+                width=30 * mm,
+                height=18 * mm,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
         except Exception:
             pass
 
-    company_name_raw = dash(company.get("name") or company.get("business_name"))
+    company_name = _safe(company.get("name") or company.get("business_name"), "")
+    c.setFont(FONT_BOLD, 14)
+    c.setFillColor(BRAND_BLUE)
+    c.drawCentredString(page_w / 2, page_h - margin - 8 * mm, company_name)
 
-    def draw_main_header():
-        nonlocal y
+    fmt_start = start.strftime("%d/%m/%Y")
+    fmt_end = end.strftime("%d/%m/%Y")
+    c.setFont(FONT_REGULAR, 9)
+    c.setFillColor(TEXT_MUTED)
+    c.drawCentredString(page_w / 2, page_h - margin - 14 * mm, f"Entre {fmt_start} e {fmt_end}")
 
-        draw_logo()
+    c.setFont(FONT_BOLD, 12)
+    c.setFillColor(TEXT_DARK)
+    c.drawCentredString(page_w / 2, page_h - margin - 21 * mm, "Lista de Clientes a visitar")
 
-        c.setFillColor(colors.black)
+    c.setStrokeColor(BRAND_BLUE)
+    c.setLineWidth(1.2)
+    c.line(margin, page_h - margin - 24 * mm, page_w - margin, page_h - margin - 24 * mm)
 
-        c.setFont(FONT_BOLD, 14)
-        company_name = fit_text(company_name_raw.upper(), max_width=135 * mm, font=FONT_BOLD, size=14)
-        c.drawCentredString(W / 2, y, company_name)
-        y -= 6 * mm
 
-        c.setFont(FONT_REGULAR, 9)
-        c.drawCentredString(W / 2, y, f"Entre {fmt_pt_date(start)} e {fmt_pt_date(end)}")
-        y -= 7 * mm
+def _draw_page_footer(c: canvas.Canvas, *, page_w: float):
+    margin = 14 * mm
+    footer_y = 9 * mm
 
-        c.setFont(FONT_BOLD, 13)
-        c.drawCentredString(W / 2, y, "Lista de Clientes a visitar")
-        y -= 8 * mm
+    c.setStrokeColor(BORDER_GRAY)
+    c.setLineWidth(0.5)
+    c.line(margin, footer_y + 4 * mm, page_w - margin, footer_y + 4 * mm)
 
-    def draw_footer():
-        c.setFont(FONT_REGULAR, 9)
-        c.setFillColor(colors.black)
-        c.drawCentredString(W / 2, 8 * mm, f"Página {page_no}")
+    c.setFont(FONT_REGULAR, 7.5)
+    c.setFillColor(TEXT_MUTED)
+    c.drawCentredString(page_w / 2, footer_y, f"P\u00e1gina {c.getPageNumber()}")
 
-    def draw_table_header():
-        nonlocal y
 
-        c.setStrokeColor(colors.black)
-        c.setFillColor(colors.black)
+def _resolve_visit_address(row: Dict) -> str:
+    service_addr = _safe(row.get("service_address"))
+    service_pc = _safe(row.get("service_postal_code"))
+    service_city = _safe(row.get("service_city"))
 
-        c.setLineWidth(1.0)
-        c.line(margin_x, y, x_right, y)
-        y -= 5 * mm
+    fiscal_addr = _safe(row.get("address"))
+    fiscal_pc = _safe(row.get("postal_code"))
+    fiscal_city = _safe(row.get("city"))
 
-        c.setFont(FONT_BOLD, 9)
-        c.drawString(x_num + 1.5 * mm, y, "Número")
-        c.drawString(x_name + 1.5 * mm, y, "Nome")
-        c.drawString(x_addr + 1.5 * mm, y, "Morada")
-        c.drawString(x_date + 1.5 * mm, y, "Data")
+    if service_addr and service_addr != fiscal_addr:
+        addr = service_addr
+        pc = service_pc or fiscal_pc
+        city = service_city or fiscal_city
+    else:
+        addr = fiscal_addr
+        pc = fiscal_pc
+        city = fiscal_city
 
-        y -= 3 * mm
+    parts = [p for p in [addr, f"{pc} {city}".strip()] if p]
+    return "\n".join(parts) if parts else "\u2014"
 
-        c.setLineWidth(1.0)
-        c.line(margin_x, y, x_right, y)
 
-        y_top = y + 8 * mm
-        y_bot = y
+def build_visits_pdf(
+    *,
+    company: Dict,
+    rows: List[Dict],
+    start: datetime,
+    end: datetime,
+) -> bytes:
+    buf = BytesIO()
+    page_w, page_h = A4
+    c = canvas.Canvas(buf, pagesize=A4)
 
-        c.setLineWidth(0.8)
-        c.line(x_name, y_top, x_name, y_bot)
-        c.line(x_addr, y_top, x_addr, y_bot)
-        c.line(x_date, y_top, x_date, y_bot)
+    margin = 14 * mm
+    table_top = page_h - margin - 28 * mm
+    bottom_limit = 16 * mm
 
-        y -= 6 * mm
-        c.setFont(FONT_REGULAR, 9)
+    header = [
+        Paragraph("N\u00famero", CELL_BOLD_STYLE),
+        Paragraph("Nome", CELL_BOLD_STYLE),
+        Paragraph("Morada", CELL_BOLD_STYLE),
+        Paragraph("Data", CELL_BOLD_STYLE),
+    ]
 
-    def new_page():
-        nonlocal y, page_no
+    col_widths = [18 * mm, 62 * mm, 82 * mm, 22 * mm]
 
-        draw_footer()
+    table_style = TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_GRAY),
+        ("FONTNAME", (0, 0), (-1, 0), FONT_BOLD),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("TEXTCOLOR", (0, 0), (-1, 0), TEXT_DARK),
+        ("FONTNAME", (0, 1), (-1, -1), FONT_REGULAR),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAFAFA")]),
+        ("GRID", (0, 0), (-1, -1), 0.4, BORDER_GRAY),
+        ("LINEBELOW", (0, 0), (-1, 0), 1, BRAND_BLUE),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("ALIGN", (3, 0), (3, -1), "CENTER"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ])
+
+    def _make_address_cell(row: Dict) -> Paragraph:
+        addr = _resolve_visit_address(row)
+        addr_html = addr.replace("\n", "<br/>")
+        return Paragraph(addr_html, CELL_STYLE)
+
+    data_rows = []
+    for row in rows:
+        code = _safe(row.get("client_code"), "\u2014")
+        name = _safe(row.get("business_name"), "\u2014")
+        scheduled = _safe(row.get("scheduled_at_str"), "\u2014")
+
+        data_rows.append([
+            Paragraph(code, CELL_STYLE),
+            Paragraph(f"<b>{name}</b>", CELL_STYLE),
+            _make_address_cell(row),
+            Paragraph(scheduled, CELL_STYLE),
+        ])
+
+    if not data_rows:
+        data_rows = [[
+            Paragraph("\u2014", CELL_MUTED),
+            Paragraph("Sem visitas no per\u00edodo selecionado.", CELL_MUTED),
+            Paragraph("", CELL_MUTED),
+            Paragraph("", CELL_MUTED),
+        ]]
+
+    all_data = [header] + data_rows
+    remaining = all_data
+
+    while remaining:
+        _draw_page_header(c, company=company, start=start, end=end, page_w=page_w, page_h=page_h)
+        current_y = table_top
+        available_h = current_y - bottom_limit
+
+        table = Table(remaining, colWidths=col_widths, repeatRows=1, splitByRow=1)
+        table.setStyle(table_style)
+
+        parts = table.split(page_w - 2 * margin, available_h)
+
+        if not parts:
+            _, h = table.wrapOn(c, page_w - 2 * margin, available_h)
+            table.drawOn(c, margin, current_y - h)
+            break
+
+        current_part = parts[0]
+        _, h = current_part.wrapOn(c, page_w - 2 * margin, available_h)
+        current_part.drawOn(c, margin, current_y - h)
+
+        rows_drawn = len(current_part._cellvalues)
+
+        _draw_page_footer(c, page_w=page_w)
+
+        if rows_drawn >= len(remaining):
+            break
+
+        remaining = [remaining[0]] + remaining[rows_drawn:]
         c.showPage()
 
-        page_no += 1
-        y = H - margin_top
-
-        draw_main_header()
-        draw_table_header()
-
-    draw_main_header()
-    draw_table_header()
-
-    row_h = 12 * mm
-    line_gap = 4.2 * mm
-
-    for r in rows:
-        if y < margin_bottom + row_h:
-            new_page()
-
-        client_code = dash(r.get("client_code"))
-        client_name_raw = dash(r.get("business_name"))
-
-        addr, postal, city = pick_service_address(r)
-        date_str = dash(r.get("scheduled_at_str"))
-
-        c.setFillColor(colors.black)
-
-        c.setFont(FONT_REGULAR, 9)
-        c.drawString(x_num + 1.5 * mm, y, client_code[:12])
-
-        c.setFont(FONT_BOLD, 9)
-        client_name = fit_text(client_name_raw, max_width=w_name - 3 * mm, font=FONT_BOLD, size=9)
-        c.drawString(x_name + 1.5 * mm, y, client_name)
-
-        c.setFont(FONT_REGULAR, 9)
-        addr1 = fit_text(addr, max_width=w_addr - 3 * mm, font=FONT_REGULAR, size=9)
-        c.drawString(x_addr + 1.5 * mm, y, addr1)
-
-        addr2 = " ".join([x for x in [postal, city] if x]).strip()
-
-        if addr2:
-            c.setFont(FONT_REGULAR, 8)
-            addr2_fit = fit_text(addr2, max_width=w_addr - 3 * mm, font=FONT_REGULAR, size=8)
-            c.drawString(x_addr + 1.5 * mm, y - line_gap, addr2_fit)
-
-        c.setFont(FONT_REGULAR, 9)
-        c.drawString(x_date + 1.5 * mm, y, date_str[:12])
-
-        y -= row_h
-
-    draw_footer()
     c.save()
-
+    buf.seek(0)
     return buf.getvalue()
