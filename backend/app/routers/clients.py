@@ -304,7 +304,7 @@ def _create_contract_appointments(
             user_id=current_user.id,
             client_id=client.id,
             service_id=service.id,
-            scheduled_at=datetime.combine(d, time(9, 0)),
+            scheduled_at=datetime.combine(d, time(6, 0)),
             address=appt_address,
             notes=client_notes,
             price=per_visit_price_base,
