@@ -195,6 +195,8 @@ ANNEXES = [
     PDF_ATTACH_DIR / "Maxforce Prime FT.pdf",
     PDF_ATTACH_DIR / "Maxforce Prime FDS.pdf",
     PDF_ATTACH_DIR / "AV MICROSIN.pdf",  # autorização de venda DGS
+    PDF_ATTACH_DIR / "AV RATIBROM 2 PROFISSIONAL.pdf",  # autorização de venda DGS
+    PDF_ATTACH_DIR / "AV RATIBROM 2 PARAFINA.pdf",  # autorização de venda DGS
 ]
 
 def _ensure_templates_exist():
