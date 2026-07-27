@@ -192,11 +192,12 @@ ANNEXES = [
     PDF_ATTACH_DIR / "FDS_MICROSIN.pdf",
     PDF_ATTACH_DIR / "FT RATROM 3G ISCO FRESCO.pdf",
     PDF_ATTACH_DIR / "FDS RATROM 3G ISCO FRESCO PROFISSIONAL 20230308.pdf",
-    PDF_ATTACH_DIR / "Maxforce Prime FT.pdf",
-    PDF_ATTACH_DIR / "Maxforce Prime FDS.pdf",
+    PDF_ATTACH_DIR / "FT_ Advion gel baratas.pdf",
+    PDF_ATTACH_DIR / "FDS ADVION GEL BARATAS.pdf",
     PDF_ATTACH_DIR / "AV MICROSIN.pdf",  # autorização de venda DGS
     PDF_ATTACH_DIR / "AV RATIBROM 2 PROFISSIONAL.pdf",  # autorização de venda DGS
     PDF_ATTACH_DIR / "AV RATIBROM 2 PARAFINA.pdf",  # autorização de venda DGS
+    PDF_ATTACH_DIR / "AV Advion Gel Baratas.pdf",  # autorização de venda DGS
 ]
 
 def _ensure_templates_exist():
