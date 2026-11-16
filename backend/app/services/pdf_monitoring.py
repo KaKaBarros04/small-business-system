@@ -215,8 +215,8 @@ def _device_style(device_type: str):
 def _device_label(device_type: str) -> str:
     dt = (device_type or "").upper()
     return {
-        "RAT_PVC": "Caixa rateira PVC",
-        "RAT_CARDBOARD": "Caixa rateira cartão",
+        "RAT_PVC": "Posto toxico",
+        "RAT_CARDBOARD": "Posto não toxico",
         "COCKROACH_TRAP": "Armadilha / detetora de baratas",
         "INSECT_CATCHER": "Inseto-captador",
         "OTHER": "Outro",
