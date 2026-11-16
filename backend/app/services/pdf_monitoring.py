@@ -263,8 +263,8 @@ def _draw_legend(c: canvas.Canvas, x: float, y: float):
 
     items = [
         ("COCKROACH_TRAP", "Armadilha / detetora de baratas"),
-        ("RAT_PVC", "Caixa rateira PVC"),
-        ("RAT_CARDBOARD", "Caixa rateira cartão"),
+        ("RAT_PVC", "Posto tóxico"),
+        ("RAT_CARDBOARD", "Posto não tóxico"),
         ("INSECT_CATCHER", "Inseto-captador"),
     ]
 
